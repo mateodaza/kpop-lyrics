@@ -80,6 +80,8 @@ npm run auth:install-mappings -- status
 
 `activate` refuses to run unless the live process has both `AEGYO_SHARED_AUTH_ENABLED=true` and `AEGYO_AUTH_CUTOVER_FREEZE=true`. Set both on the deployed service before running activation and inherit them into the operator process; do not supply temporary command-only overrides. The freeze wins while the latch is absent, so this ordering cannot expose a half-cut-over login path. Activation rechecks complete mapping coverage before inserting the latch. An existing latch succeeds only when its digest exactly matches; it never uses a blind conflict-ignore. The operator must keep every legacy writer frozen throughout mapping, reconciliation, and activation. The database ID/role check does not replace the before/after linked-record reconciliation for favorites, profiles, comments, votes, follows, or other history.
 
+While `AEGYO_AUTH_CUTOVER_FREEZE=true`, middleware rejects every mutating API request with a no-store `503` and `Retry-After: 60` before route code can write the database or call Beehiiv, email, analytics, or other providers. API reads and page reads remain available. Local logout is the sole exception: its closed-mode path only expires the browser cookie and does not mutate the database. Keep the freeze enabled from before the first preservation snapshot through mapping verification and latch activation.
+
 ### Production-schema rehearsal
 
 A schema-only production dump can be rehearsed without copying any production rows:
