@@ -187,6 +187,8 @@ mapping_cli() {
     AEGYO_AUTH_BASE_URL=https://accounts.example.test \
     AEGYO_MAPPING_MANIFEST="$proof_dir/reviewed-manifest.json" \
     AEGYO_MAPPING_APPROVED_DIGEST="$digest" \
+    AEGYO_SHARED_AUTH_ENABLED=true \
+    AEGYO_AUTH_CUTOVER_FREEZE=true \
     AEGYO_MAPPING_CONFIRM="$confirmation" \
     node scripts/shared-auth/install-mappings.mjs "$command"
 }

@@ -17,6 +17,10 @@ import {
 
 const enabled = process.env.AEGYO_PROVISIONING_POSTGRES_PROOF === "1";
 const issuer = "https://accounts.example.test/api/auth";
+const safeActivationEnvironment = {
+  AEGYO_SHARED_AUTH_ENABLED: "true",
+  AEGYO_AUTH_CUTOVER_FREEZE: "true",
+};
 const resetState = {
   version: 1 as const,
   kind: "database" as const,
@@ -177,11 +181,15 @@ describe.runIf(enabled)("shared provisioning on disposable PostgreSQL", () => {
       }),
     ).rejects.toThrow("existing_mapping_conflict");
 
-    await expect(activateMappings(prisma, manifest)).resolves.toEqual({
+    await expect(
+      activateMappings(prisma, manifest, safeActivationEnvironment),
+    ).resolves.toEqual({
       alreadyActive: false,
       mappingDigest: manifest.mappingDigest,
     });
-    await expect(activateMappings(prisma, manifest)).resolves.toEqual({
+    await expect(
+      activateMappings(prisma, manifest, safeActivationEnvironment),
+    ).resolves.toEqual({
       alreadyActive: true,
       mappingDigest: manifest.mappingDigest,
     });
@@ -194,10 +202,14 @@ describe.runIf(enabled)("shared provisioning on disposable PostgreSQL", () => {
       accountsSubjectsDigest: "f".repeat(64),
     };
     await expect(
-      activateMappings(prisma, {
-        ...alternateCore,
-        mappingDigest: sha256(alternateCore),
-      }),
+      activateMappings(
+        prisma,
+        {
+          ...alternateCore,
+          mappingDigest: sha256(alternateCore),
+        },
+        safeActivationEnvironment,
+      ),
     ).rejects.toThrow("latch_digest_mismatch");
 
     expect(await prisma.$queryRaw`SELECT * FROM "User" ORDER BY id`).toEqual(
@@ -237,6 +249,8 @@ describe.runIf(enabled)("shared provisioning on disposable PostgreSQL", () => {
               AEGYO_AUTH_BASE_URL: "https://accounts.example.test",
               AEGYO_MAPPING_MANIFEST: manifestPath,
               AEGYO_MAPPING_APPROVED_DIGEST: manifest.mappingDigest,
+              AEGYO_SHARED_AUTH_ENABLED: "true",
+              AEGYO_AUTH_CUTOVER_FREEZE: "true",
               ...(confirmation ? { AEGYO_MAPPING_CONFIRM: confirmation } : {}),
             },
           },

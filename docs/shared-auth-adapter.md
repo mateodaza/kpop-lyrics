@@ -73,11 +73,12 @@ npm run auth:install-mappings -- status
 After the separate ownership reconciliation passes, activate the latch explicitly:
 
 ```sh
-AEGYO_MAPPING_CONFIRM=activate-reviewed-shared-auth-cutover npm run auth:install-mappings -- activate
+AEGYO_MAPPING_CONFIRM=activate-reviewed-shared-auth-cutover \
+npm run auth:install-mappings -- activate
 npm run auth:install-mappings -- status
 ```
 
-`activate` rechecks complete mapping coverage before inserting the latch. An existing latch succeeds only when its digest exactly matches; it never uses a blind conflict-ignore. The operator must keep every legacy writer frozen throughout mapping, reconciliation, and activation. The database ID/role check does not replace the before/after linked-record reconciliation for favorites, profiles, comments, votes, follows, or other history.
+`activate` refuses to run unless the live process has both `AEGYO_SHARED_AUTH_ENABLED=true` and `AEGYO_AUTH_CUTOVER_FREEZE=true`. Set both on the deployed service before running activation and inherit them into the operator process; do not supply temporary command-only overrides. The freeze wins while the latch is absent, so this ordering cannot expose a half-cut-over login path. Activation rechecks complete mapping coverage before inserting the latch. An existing latch succeeds only when its digest exactly matches; it never uses a blind conflict-ignore. The operator must keep every legacy writer frozen throughout mapping, reconciliation, and activation. The database ID/role check does not replace the before/after linked-record reconciliation for favorites, profiles, comments, votes, follows, or other history.
 
 ### Production-schema rehearsal
 
@@ -108,7 +109,7 @@ This proves the Aegyo backup/restore and mapping side with synthetic data only. 
 
 Before activation, prove the mappings, register the exact callback, verify provider-state reader credentials, freeze legacy credential writes operationally, and rehearse the forced sign-in UX. Activation keeps old rows for audit and data integrity, but legacy sessions lack provider metadata and are never authorized afterward. They are not a rollback mechanism.
 
-With shared mode active, legacy login, signup, forgot, and reset endpoints stop before credential reads or writes. Login submissions and `/api/auth/recovery` continue into Accounts sign-in, where Accounts owns password recovery and new-account registration. Aegyo creates a local row only on the verified callback under the provisioning rules above. Shared sessions retain the `session` cookie and `getSession()` shape expected by current consumers. Ordinary reads cache provider state for at most 30 seconds; authenticated writes always check Accounts and fail closed during outage.
+With shared mode active, direct visits to `/login`, `/signup`, and `/forgot-password` enter Accounts before rendering a legacy credential form. Legacy login, signup, forgot, and reset endpoints also stop before credential reads or writes; their clients follow the Accounts redirect if cutover occurs after a page has already loaded. `/api/auth/recovery` continues into Accounts sign-in, where Accounts owns password recovery and new-account registration. Aegyo creates a local row only on the verified callback under the provisioning rules above. Shared sessions retain the `session` cookie and `getSession()` shape expected by current consumers. Ordinary reads cache provider state for at most 30 seconds; authenticated writes always check Accounts and fail closed during outage.
 
 The remaining rollout gates are provider client registration and secrets, a reconciled import of every existing-user mapping and digest, migration-history review, a real database concurrency rehearsal, real browser/signup/recovery rehearsal, and a final UX pass that labels Accounts sign-in and collision recovery directly.
 

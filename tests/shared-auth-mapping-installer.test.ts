@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { sha256 } from "../scripts/shared-auth/reconciliation-lib.mjs";
 import {
+  activateMappings,
   exactIssuer,
+  requireSafeActivationEnvironment,
   validateReviewedManifest,
 } from "../scripts/shared-auth/mapping-installer-lib.mjs";
 
@@ -25,6 +27,33 @@ function manifest() {
 }
 
 describe("reviewed mapping installer input", () => {
+  it("requires both the live shared-auth flag and cutover freeze for activation", () => {
+    expect(() => requireSafeActivationEnvironment({})).toThrow(
+      "shared_auth_flag_not_enabled",
+    );
+    expect(() =>
+      requireSafeActivationEnvironment({ AEGYO_SHARED_AUTH_ENABLED: "true" }),
+    ).toThrow("cutover_freeze_not_enabled");
+    expect(() =>
+      requireSafeActivationEnvironment({
+        AEGYO_SHARED_AUTH_ENABLED: "true",
+        AEGYO_AUTH_CUTOVER_FREEZE: "true",
+      }),
+    ).not.toThrow();
+  });
+
+  it("refuses activation before opening a database transaction", async () => {
+    const prisma = { $transaction: vi.fn() };
+    const reviewed = manifest();
+    await expect(
+      activateMappings(prisma, reviewed, {
+        AEGYO_SHARED_AUTH_ENABLED: "true",
+        AEGYO_AUTH_CUTOVER_FREEZE: "false",
+      }),
+    ).rejects.toThrow("cutover_freeze_not_enabled");
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
   it("derives the exact Accounts issuer from a canonical HTTPS origin", () => {
     expect(exactIssuer("https://accounts.example.test")).toBe(
       "https://accounts.example.test/api/auth",
