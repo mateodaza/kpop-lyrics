@@ -11,4 +11,7 @@ const SHARED_AUTH_ENTRY = "/api/auth/shared/login";
 export async function enterSharedAuthWhenActive() {
   const mode = await resolveAuthMode();
   if (mode.kind === "shared") redirect(SHARED_AUTH_ENTRY);
+  return mode.kind === "closed" && mode.reason === "cutover_freeze"
+    ? "cutover_freeze"
+    : "available";
 }

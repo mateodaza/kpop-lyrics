@@ -22,10 +22,16 @@ describe("legacy auth entry pages", () => {
 
   it.each([
     { kind: "legacy" },
-    { kind: "closed", reason: "cutover_freeze" },
+    { kind: "closed", reason: "state_unavailable" },
   ])("does not bypass the $kind mode", async (mode) => {
     mocks.mode.mockResolvedValue(mode);
-    await enterSharedAuthWhenActive();
+    await expect(enterSharedAuthWhenActive()).resolves.toBe("available");
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("returns a maintenance state during the explicit cutover freeze", async () => {
+    mocks.mode.mockResolvedValue({ kind: "closed", reason: "cutover_freeze" });
+    await expect(enterSharedAuthWhenActive()).resolves.toBe("cutover_freeze");
     expect(mocks.redirect).not.toHaveBeenCalled();
   });
 });

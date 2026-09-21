@@ -1,9 +1,12 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { middleware } from "../middleware";
-import { shouldBlockForAuthCutover } from "../lib/shared-auth/write-freeze";
+import {
+  CUTOVER_GET_WRITER_PATHS,
+  shouldBlockForAuthCutover,
+} from "../lib/shared-auth/write-freeze";
 
 const originalFreeze = process.env.AEGYO_AUTH_CUTOVER_FREEZE;
 
@@ -42,6 +45,61 @@ function auditedWrites() {
 }
 
 describe("site write freeze during shared-auth cutover", () => {
+  it("keeps the reviewed GET-writer inventory explicit and fully blocked", () => {
+    expect(CUTOVER_GET_WRITER_PATHS).toEqual([
+      "/api/admin/annotations",
+      "/api/admin/digest",
+      "/api/admin/event-registrations",
+      "/api/admin/event-registrations/sync",
+      "/api/admin/giveaway-entries",
+      "/api/admin/i18n",
+      "/api/admin/lyrics",
+      "/api/admin/pc-artist-index",
+      "/api/admin/pc-index",
+      "/api/admin/poll-results",
+      "/api/admin/slang-media",
+      "/api/auth/shared/callback",
+      "/api/events/register",
+      "/api/follow",
+      "/api/giveaway",
+      "/api/le-sserafim",
+      "/api/polls/[slug]",
+      "/api/polls/[slug]/timeseries",
+      "/api/restock-alert",
+      "/api/tips",
+      "/api/vote",
+    ]);
+    for (const pathname of CUTOVER_GET_WRITER_PATHS) {
+      const routeFile = join(
+        process.cwd(),
+        "app",
+        ...pathname.slice(1).split("/"),
+        "route.ts",
+      );
+      expect(existsSync(routeFile), pathname).toBe(true);
+      expect(readFileSync(routeFile, "utf8"), pathname).toMatch(
+        /export (?:async function|const) GET\b/,
+      );
+      expect(
+        shouldBlockForAuthCutover(
+          { method: "GET", pathname: pathname.replace("[slug]", "monthly") },
+          { AEGYO_AUTH_CUTOVER_FREEZE: "true" },
+        ),
+        pathname,
+      ).toBe(true);
+    }
+
+    process.env.AEGYO_AUTH_CUTOVER_FREEZE = "true";
+    for (const pattern of CUTOVER_GET_WRITER_PATHS) {
+      const pathname = pattern.replace("[slug]", "monthly");
+      expect(
+        middleware(new NextRequest(`https://aegyo.example.test${pathname}`))
+          .status,
+        pattern,
+      ).toBe(503);
+    }
+  });
+
   it("covers every current API mutation before its route handler runs", () => {
     const writes = auditedWrites();
     expect(writes.length).toBeGreaterThan(30);
@@ -78,10 +136,10 @@ describe("site write freeze during shared-auth cutover", () => {
     });
   });
 
-  it("keeps API reads, logout, and every request without the freeze unchanged", () => {
+  it("keeps pure API reads, logout, and every request without the freeze unchanged", () => {
     expect(
       shouldBlockForAuthCutover(
-        { method: "GET", pathname: "/api/events/register" },
+        { method: "GET", pathname: "/api/news" },
         { AEGYO_AUTH_CUTOVER_FREEZE: "true" },
       ),
     ).toBe(false);
@@ -101,7 +159,7 @@ describe("site write freeze during shared-auth cutover", () => {
     process.env.AEGYO_AUTH_CUTOVER_FREEZE = "true";
     const readResponse = middleware(
       new NextRequest(
-        "https://aegyo.example.test/api/events/register?slug=event",
+        "https://aegyo.example.test/api/news?artist=aespa",
       ),
     );
     expect(readResponse.headers.get("x-middleware-next")).toBe("1");
