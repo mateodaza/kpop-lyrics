@@ -11,6 +11,13 @@ const value = (input, limit = 500) =>
   input.length <= limit &&
   !/[\u0000-\u001f]/u.test(input);
 
+export function requireSafeActivationEnvironment(environment) {
+  if (environment?.AEGYO_SHARED_AUTH_ENABLED !== "true")
+    refuse("shared_auth_flag_not_enabled");
+  if (environment?.AEGYO_AUTH_CUTOVER_FREEZE !== "true")
+    refuse("cutover_freeze_not_enabled");
+}
+
 export function exactIssuer(baseUrl) {
   let base;
   try {
@@ -158,7 +165,8 @@ export async function applyMappings(prisma, manifest) {
   });
 }
 
-export async function activateMappings(prisma, manifest) {
+export async function activateMappings(prisma, manifest, environment) {
+  requireSafeActivationEnvironment(environment);
   return prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('aegyo-local-mapping-v1'))`;
     await tx.$executeRaw`LOCK TABLE "User", "SharedAuthIdentity", "AuthCutoverLatch" IN SHARE ROW EXCLUSIVE MODE`;

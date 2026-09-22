@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { shouldBlockForAuthCutover } from "@/lib/shared-auth/write-freeze";
 
 // Geo language router: default Latin-American (and Spanish-speaking) visitors to
 // Spanish. Railway doesn't inject a client-country header, so we read one IF the
@@ -38,6 +39,31 @@ function langFromAcceptLanguage(al: string | null): "es" | "en" | null {
 }
 
 export function middleware(req: NextRequest) {
+  if (
+    shouldBlockForAuthCutover({
+      method: req.method,
+      pathname: req.nextUrl.pathname,
+    })
+  ) {
+    return NextResponse.json(
+      {
+        code: "cutover_freeze",
+        error: "This action is temporarily unavailable. Please try again shortly.",
+      },
+      {
+        status: 503,
+        headers: {
+          "cache-control": "no-store",
+          "retry-after": "60",
+        },
+      },
+    );
+  }
+
+  // API reads and unfrozen writes should retain their existing behavior. Geo
+  // language cookies are page-only and must not be added to API responses.
+  if (req.nextUrl.pathname.startsWith("/api/")) return NextResponse.next();
+
   // Respect any prior decision — an explicit choice or an already-seeded hint.
   if (req.cookies.get("aegyo-lang") || req.cookies.get("aegyo_geo")) {
     return NextResponse.next();
@@ -59,7 +85,9 @@ export function middleware(req: NextRequest) {
   return res;
 }
 
-// Run on page navigations only — skip static assets, the image optimizer, and APIs.
+// Run on pages and APIs, while skipping static assets and the image optimizer.
+// API requests pass through unchanged unless the auth cutover freeze blocks a
+// mutating request above.
 export const config = {
-  matcher: ["/((?!_next|api|.*\\.[a-zA-Z0-9]+$).*)"],
+  matcher: ["/((?!_next|.*\\.[a-zA-Z0-9]+$).*)"],
 };

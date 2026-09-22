@@ -120,7 +120,7 @@ try {
   };
   const manifest = { ...core, mappingDigest: sha256(core) };
   await applyMappings(prisma, manifest);
-  await activateMappings(prisma, manifest);
+  await activateMappings(prisma, manifest, process.env);
   console.info(
     JSON.stringify({
       existingLocalUserId: input.existing.localUserId,

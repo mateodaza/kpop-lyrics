@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { authCutoverFrozen } from "@/lib/shared-auth/mode";
 import { generateCommunity, type PoolSong } from "@/lib/community";
 
 // Self-contained community store (annotations + comments), created and seeded
@@ -122,6 +123,9 @@ async function insertCommunitySeed(): Promise<{ annotations: number; comments: n
 }
 
 export async function ensureCommunity(): Promise<void> {
+  // Production tables are verified before cutover. During the freeze, page
+  // reads must not run DDL or seed rows after the preservation snapshot.
+  if (authCutoverFrozen()) return;
   if (ready) return;
   await createCommunityTables();
   const existing = await prisma.$queryRaw<{ c: number }[]>`SELECT COUNT(*)::int AS c FROM "CommunityAnnotation"`;

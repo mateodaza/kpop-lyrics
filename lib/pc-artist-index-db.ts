@@ -2,11 +2,13 @@
 // (same pattern as NewsPost / Poll / PcCard) — no migration. One row per idol,
 // upserted by slug, so re-ingesting a refreshed snapshot is idempotent.
 import { prisma } from "@/lib/prisma";
+import { authCutoverFrozen } from "@/lib/shared-auth/mode";
 import type { ArtistIndexRow } from "@/lib/pc-artist-index";
 
 let ready = false;
 
 export async function ensureArtistIndexTable() {
+  if (authCutoverFrozen()) return;
   if (ready) return;
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "PcArtistIndex" (

@@ -71,14 +71,18 @@ DATABASE_URL="postgresql://postgres:proof@127.0.0.1:$port/proof" \
 docker exec "$container" createdb -U postgres aegyo_synthetic_staging
 AEGYO_STAGING_CONFIRM=initialize-empty-synthetic-staging-database \
   AEGYO_STAGING_DATABASE_URL="postgresql://postgres:proof@127.0.0.1:$port/aegyo_synthetic_staging" \
-  AEGYO_STAGING_DATABASE_NAME=aegyo_synthetic_staging \
-  AEGYO_AUTH_BASE_URL=https://accounts-staging.example.test \
+AEGYO_STAGING_DATABASE_NAME=aegyo_synthetic_staging \
+AEGYO_AUTH_BASE_URL=https://accounts-staging.example.test \
+  AEGYO_SHARED_AUTH_ENABLED=true \
+  AEGYO_AUTH_CUTOVER_FREEZE=true \
   AEGYO_STAGING_FIXTURE=staging/fixtures.example.json \
   node scripts/staging/initialize-synthetic.mjs >/dev/null
 if AEGYO_STAGING_CONFIRM=initialize-empty-synthetic-staging-database \
   AEGYO_STAGING_DATABASE_URL="postgresql://postgres:proof@127.0.0.1:$port/aegyo_synthetic_staging" \
   AEGYO_STAGING_DATABASE_NAME=aegyo_synthetic_staging \
   AEGYO_AUTH_BASE_URL=https://accounts-staging.example.test \
+  AEGYO_SHARED_AUTH_ENABLED=true \
+  AEGYO_AUTH_CUTOVER_FREEZE=true \
   AEGYO_STAGING_FIXTURE=staging/fixtures.example.json \
   node scripts/staging/initialize-synthetic.mjs >/dev/null 2>&1; then
   echo "synthetic staging initializer unexpectedly accepted a non-empty database" >&2

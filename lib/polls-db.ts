@@ -6,11 +6,13 @@
 // the "use client" PollCard) — it uses prisma + node crypto.
 import { randomUUID, createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { authCutoverFrozen } from "@/lib/shared-auth/mode";
 import { OPTION_KEYS, ZERO_COUNTS, type OptionKey, type PollSeed, type PollState, type PollCounts, type TimeBucket } from "@/lib/polls";
 
 let tablesReady = false;
 
 export async function ensurePollTables() {
+  if (authCutoverFrozen()) return;
   if (tablesReady) return;
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "Poll" (
@@ -51,6 +53,7 @@ export async function ensurePollTables() {
 
 // Upsert the poll row from its config seed (labels/daebak may be edited in config).
 export async function seedPoll(s: PollSeed) {
+  if (authCutoverFrozen()) return;
   const label = (k: OptionKey) => s.options.find((o) => o.key === k)?.label ?? null;
   const labelEs = (k: OptionKey) => s.options.find((o) => o.key === k)?.labelEs ?? null;
   await prisma.$executeRaw`

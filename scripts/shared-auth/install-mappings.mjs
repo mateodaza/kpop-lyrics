@@ -65,7 +65,7 @@ try {
     if (required("AEGYO_MAPPING_CONFIRM") !== "activate-reviewed-shared-auth-cutover")
       fail("activation_confirmation_missing");
     try {
-      result = await activateMappings(prisma, manifest);
+      result = await activateMappings(prisma, manifest, process.env);
     } catch (error) {
       if (error instanceof MappingRefusal) throw error;
       fail("activation_outcome_unknown_run_status");

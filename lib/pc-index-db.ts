@@ -4,11 +4,13 @@
 // the sold rows carry the price history.
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { authCutoverFrozen } from "@/lib/shared-auth/mode";
 import type { PcCardSeed as CardSeed, PcListing as Listing } from "@/lib/pc-index";
 
 let tablesReady = false;
 
 export async function ensurePcTables() {
+  if (authCutoverFrozen()) return;
   if (tablesReady) return;
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "PcCard" (
