@@ -3,10 +3,10 @@
 ## Current release state (2026-09-23)
 
 - The additive chat and participation tables are already present in the shared Aegyo database. The Railway preview is deployed with chat enabled; the live Aegyo service still has chat disabled.
-- The preview passed anonymous reads, shared-account sign-in, the age/rules gate, one safe signed-in post, public visibility, and admin removal of that test post. The menu covers the chat correctly, and the full room clears the header at desktop and mobile widths while scrolling.
+- The preview passed anonymous reads, shared-account sign-in, the age/rules gate, one safe signed-in post, public visibility, and admin removal of that test post. The last visible disposable message was also removed. The menu covers the chat correctly, and the full room clears the header at desktop and mobile widths while scrolling. On the final deployed build, the 844×390 landscape dock starts below the 65px navigation, its close button remains visible, and it collapses normally. Recheck signed-in posting after the final deploy before launch; the operator's preview session expired during redeployment.
 - The production `OPENAI_API_KEY` returned HTTP 200 from the moderation endpoint. Replace the temporary personal key with a Myosin-owned restricted key after launch; the owner has accepted that temporary use.
 - The cleanup Function currently targets the preview origin. Change its URL to the live origin after the production code is deployed, before retiring the preview.
-- Railway-generated preview URLs send `X-Robots-Tag: noindex, nofollow, noarchive` and reject non-chat site writes. Set `AEGYO_CHAT_WRITE_ALLOWLIST` on the preview service to the comma-separated emails of named testers; remove this variable from the live service so launch posting is open to eligible accounts.
+- The preview image sets `AEGYO_CHAT_PREVIEW_MODE=true` at build and runtime. Its deployed `/chat` response sends `X-Robots-Tag: noindex, nofollow, noarchive`; a non-chat POST returns HTTP 403 before reaching the handler. Railway's proxy hostname is not a reliable preview detector. The preview service has `AEGYO_CHAT_WRITE_ALLOWLIST` set to Mateo and Simon; the live service must not have that variable so launch posting is open to eligible accounts.
 
 ## Production cutover
 
