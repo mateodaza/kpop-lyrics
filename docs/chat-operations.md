@@ -1,5 +1,19 @@
 # Fan chat operations
 
+## Current release state (2026-09-23)
+
+- The additive chat and participation tables are already present in the shared Aegyo database. The Railway preview is deployed with chat enabled; the live Aegyo service still has chat disabled.
+- The preview passed anonymous reads, shared-account sign-in, admin queue access, and the menu-over-chat layering check. The signed-in first-post check waits for the account holder to accept the age/rules screen.
+- The production `OPENAI_API_KEY` returned HTTP 200 from the moderation endpoint. Replace the temporary personal key with a Myosin-owned restricted key after launch; the owner has accepted that temporary use.
+- The cleanup Function currently targets the preview origin. Change its URL to the live origin after the production code is deployed, before retiring the preview.
+
+## Production cutover
+
+1. Merge PR #16 and let the live `kpop-lyrics` Railway service deploy with `AEGYO_CHAT_ENABLED` unset. Confirm `/chat` still returns 404 and the rest of Aegyo works.
+2. Change the cleanup Function's `CHAT_CLEANUP_URL` to `https://www.aegyoarena.com/api/chat/cleanup` and run it once; the endpoint should return HTTP 200. Keep the same secret on the Function and live service.
+3. Set `AEGYO_CHAT_ENABLED=true` on the live service and wait for a healthy deploy. Smoke-test public read, sign-in, age/rules acceptance, one safe post, moderator review, and both apex and `www` entry points. The production database is shared with the preview, so remove disposable test posts through moderation.
+4. Keep the preview until those checks pass. If posting or moderation fails, unset `AEGYO_CHAT_ENABLED` on the live service; this hides the widget and API while preserving messages for diagnosis.
+
 ## Deployment prerequisites
 
 1. The shared Aegyo Accounts cutover is already live. The API requires a provider-backed shared session for posts, reports, and chat moderation. Legacy local sessions remain read-only. Test a mapped legacy user: their local `emailVerified` flag may still be false despite a valid shared-account session.
