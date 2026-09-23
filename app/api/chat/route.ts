@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getChatSession } from "@/lib/chat-auth";
 import { chatDisplayName, classifyChatBody, sameOrigin, validateChatBody } from "@/lib/chat-policy";
 import { hasCurrentChatParticipation } from "@/lib/chat-participation";
+import { readChatJson } from "@/lib/chat-request";
 
 export const dynamic = "force-dynamic";
 
@@ -38,10 +39,11 @@ export async function POST(request: NextRequest) {
     if (!hasCurrentChatParticipation(participation)) return NextResponse.json({ error: "Accept the fan chat rules and confirm you are at least 16 before posting.", code: "chat_agreement_required" }, { status: 403 });
   } catch { return NextResponse.json({ error: "Could not check chat access." }, { status: 503 }); }
   if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: "Chat posting is temporarily unavailable." }, { status: 503 });
-  if (Number(request.headers.get("content-length") ?? 0) > 2048) {
+  const parsed = await readChatJson(request, 2048);
+  if (parsed.tooLarge) {
     return NextResponse.json({ error: "Message is too long." }, { status: 413 });
   }
-  const input = await request.json().catch(() => null) as { body?: unknown } | null;
+  const input = parsed.value as { body?: unknown } | null;
   const checked = validateChatBody(input?.body);
   if (!checked.ok) return NextResponse.json({ error: checked.error }, { status: 422 });
 

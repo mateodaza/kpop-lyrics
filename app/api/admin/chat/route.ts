@@ -4,6 +4,7 @@ import { getRole } from "@/lib/access";
 import { rankOf, RANK, type Role } from "@/lib/roles";
 import { sameOrigin } from "@/lib/chat-policy";
 import { prisma } from "@/lib/prisma";
+import { readChatJson } from "@/lib/chat-request";
 
 export async function POST(request: NextRequest) {
   if (process.env.AEGYO_CHAT_ENABLED !== "true") return NextResponse.json({ error: "Chat is not enabled." }, { status: 404 });
@@ -12,7 +13,9 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   const role = await getRole(session.user);
   if (rankOf(role) < RANK.moderator) return NextResponse.json({ error: "Moderator access required." }, { status: 403 });
-  const input = await request.json().catch(() => null) as { id?: unknown; decision?: unknown; userId?: unknown; reason?: unknown } | null;
+  const parsed = await readChatJson(request, 512);
+  if (parsed.tooLarge) return NextResponse.json({ error: "Invalid review request." }, { status: 413 });
+  const input = parsed.value as { id?: unknown; decision?: unknown; userId?: unknown; reason?: unknown } | null;
   if (input?.decision === "mute" || input?.decision === "unmute") {
     const userId = typeof input.userId === "string" ? input.userId : "";
     if (!userId || userId.length > 40 || userId === session.userId) return NextResponse.json({ error: "Invalid user." }, { status: 400 });

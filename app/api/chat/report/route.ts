@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getChatSession } from "@/lib/chat-auth";
 import { sameOrigin } from "@/lib/chat-policy";
+import { readChatJson } from "@/lib/chat-request";
 
 const reasons = new Set(["abuse", "sexual", "spam", "personal_info", "other"]);
 
@@ -10,7 +11,9 @@ export async function POST(request: NextRequest) {
   if (!sameOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   const session = await getChatSession();
   if (!session) return NextResponse.json({ error: "Sign in with Aegyo Accounts to report a message." }, { status: 401 });
-  const input = await request.json().catch(() => null) as { messageId?: unknown; reason?: unknown } | null;
+  const parsed = await readChatJson(request, 512);
+  if (parsed.tooLarge) return NextResponse.json({ error: "Invalid report." }, { status: 413 });
+  const input = parsed.value as { messageId?: unknown; reason?: unknown } | null;
   const messageId = typeof input?.messageId === "string" ? input.messageId : "";
   const reason = typeof input?.reason === "string" ? input.reason : "";
   if (!messageId || messageId.length > 40 || !reasons.has(reason)) return NextResponse.json({ error: "Choose a report reason." }, { status: 400 });
