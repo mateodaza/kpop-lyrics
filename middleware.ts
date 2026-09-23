@@ -39,13 +39,14 @@ function langFromAcceptLanguage(al: string | null): "es" | "en" | null {
 }
 
 function withRailwayNoIndex(req: NextRequest, response: NextResponse): NextResponse {
-  // Railway preview domains use the live database but are never canonical pages.
-  if (req.nextUrl.hostname.endsWith(".up.railway.app")) response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  // The Railway proxy can present its internal hostname to Next middleware.
+  // This flag is baked into the preview image only, never the live service.
+  if (process.env.AEGYO_CHAT_PREVIEW_MODE === "true") response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   return response;
 }
 
 export function middleware(req: NextRequest) {
-  if (process.env.AEGYO_CHAT_WRITE_ALLOWLIST !== undefined && req.nextUrl.hostname.endsWith(".up.railway.app") && !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
+  if (process.env.AEGYO_CHAT_PREVIEW_MODE === "true" && !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
       !/^\/api\/(?:chat(?:\/(?:participation|report|cleanup))?|admin\/chat|auth\/(?:logout|shared\/logout))$/.test(req.nextUrl.pathname)) {
     return withRailwayNoIndex(req, NextResponse.json(
       { code: "preview_read_only", error: "This preview does not accept site changes." },
