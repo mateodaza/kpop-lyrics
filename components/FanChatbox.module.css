@@ -98,6 +98,7 @@
 .fullPage .composerRow textarea { font-size: 14px; }
 @media (max-width: 600px) {
   .fullPage { width: 100%; height: min(78dvh, 700px); min-height: 460px; border-radius: 14px; }
+  .fullPage.awaitingAgreement { height: min(62dvh, 540px); min-height: 450px; }
   .fullPage .list { padding: 10px 14px 16px; }
   .fullPage .messageLine { gap: 5px; font-size: 13px; }
   .fullPage .compose { padding: 12px 13px; }

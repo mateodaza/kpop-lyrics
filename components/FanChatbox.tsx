@@ -141,7 +141,7 @@ export default function FanChatbox({ canPost, signedIn, fullPage = false }: { ca
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not send report."); }
   }
 
-  return <aside className={`${styles.shell} ${open ? styles.open : styles.closed} ${fullPage ? styles.fullPage : ""}`} aria-label={t("Aegyo fan chat", "Chat de fans de Aegyo")}>
+  return <aside className={`${styles.shell} ${open ? styles.open : styles.closed} ${fullPage ? styles.fullPage : ""} ${fullPage && participation === "required" && canPost ? styles.awaitingAgreement : ""}`} aria-label={t("Aegyo fan chat", "Chat de fans de Aegyo")}>
     {fullPage ? <div className={styles.fullHeader}><span className={styles.fullHeaderTitle}><svg className={styles.brandMark} viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 2v20M2 12h20M5 5l14 14M19 5 5 19" /></svg><strong><span className={styles.liveDot} />{t("Aegyo fan room", "Sala de fans de Aegyo")}</strong></span><Link href="/">{t("Back to Aegyo", "Volver a Aegyo")}</Link></div> : <button type="button" className={styles.toggle} aria-expanded={open} aria-controls="aegyo-chat-room" onClick={() => setOpen((value) => !value)}>
       <svg className={styles.brandMark} viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 2v20M2 12h20M5 5l14 14M19 5 5 19" /></svg>
       <span className={styles.toggleText}><strong>{t("Fan room", "Sala de fans")}</strong><span>{!open && latest ? `${latest.authorName}: ${latest.body}` : t("Aegyo Arena chat", "Chat de Aegyo Arena")}</span></span>
