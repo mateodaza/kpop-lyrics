@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
   try {
     const result = await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${messageId}))::text`;
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`chat-report:${session.userId}`}))::text`;
       const message = await tx.chatMessage.findUnique({ where: { id: messageId }, select: { authorId: true, status: true } });
       if (!message || message.status !== "visible") return "unavailable";
       if (message.authorId === session.userId) return "own_message";

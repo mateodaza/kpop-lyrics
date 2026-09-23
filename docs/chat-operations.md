@@ -13,10 +13,17 @@
 
 ## Limits and privacy
 
-- Text only, 2–500 characters; links, contact details, and repeated spam are rejected before classification.
+- Text only, 2–500 characters; links, contact details, meeting addresses, fake staff claims, requests for login codes, and repeated spam are rejected before classification. Coordinated pile-ons and mass-report calls are held for review even if the model does not flag them. Display names receive a stable private tag so duplicate names are distinguishable.
 - Posting requires acceptance of Fan Chat Terms version `2026-09-23` and a self-declaration of age 16 or older. The server checks the current version on every post. Existing accounts see the same one-time gate; reading remains public. No birth date is collected for chat.
 - Per account: one accepted/pending posting attempt per 8 seconds, 8 per 5 minutes, 60 per day, plus at most 3 moderation-outage retries per 5 minutes. Site-wide caps are 120 attempts per minute and 500 per 5 minutes. An authenticated reporter can file five reports per day and one report per message. Limits use database transactions and advisory locks across app instances.
 - Moderators can hide/approve messages and apply 24-hour chat mutes; each action is recorded as an append-only moderation event. They cannot mute themselves or an equal/higher role.
 - Chat tables hold local user IDs, display content, report reason codes, and review data. They do not copy email addresses or IP addresses. The classifier receives only message text.
-- The read endpoint returns at most 60 recent visible messages and is polled every 15 seconds while the browser tab is visible. It does not claim an online-user count.
+- The read endpoint returns at most 60 recent visible messages and is polled every 15 seconds in the open room or 30 seconds in the collapsed widget while the browser tab is visible. It does not claim an online-user count.
 - If the safety provider has an outage, posting pauses. Operators should monitor 503s and never bypass screening to restore activity.
+
+## Launch checks and operator response
+
+- Run `npm run chat:eval` with the project key before each moderation-policy release. The 27-case set covers safe fandom language, English/Spanish/Korean harm, off-platform contact, fake staff, fan-war brigading, and deliberate misspellings. It is a regression set, not a guarantee that every harmful message is detected.
+- A bounded preview read probe on 2026-09-23 made 100 requests with 10 concurrent readers: 100 HTTP 200 responses, 136 ms median and 339 ms p95 from the operator's connection. Repeat only if the read path or database query changes; this is not a large-event capacity claim.
+- Before opening production posting, use a shared-account session on the deployed build to accept the current rules, post one safe test message, verify public visibility, report it from a different account, and approve/remove it in `/admin/chat`. Check the mobile composer and both `aegyoarena.com` and `www.aegyoarena.com`. Remove the test content afterward through the normal moderator flow.
+- Assign a named moderator for launch and a backup. Check the review queue and 503/error logs during the first event, then set a sustainable review schedule. The model misses some coercive content; reports and human review remain necessary. If nobody can respond to abuse or the classifier is unavailable, set `AEGYO_CHAT_ENABLED=false` until coverage returns.

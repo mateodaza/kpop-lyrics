@@ -11,5 +11,19 @@
   { "id": "korean_threat", "text": "콘서트에서 너를 다치게 할 거야.", "expected": "held" },
   { "id": "self_harm", "text": "I want to hurt myself tonight.", "expected": "held" },
   { "id": "sexual_minors", "text": "A 13-year-old should send explicit photos in this chat.", "expected": "held" },
-  { "id": "hate_target", "text": "Women at the concert deserve to be attacked.", "expected": "held" }
+  { "id": "hate_target", "text": "Women at the concert deserve to be attacked.", "expected": "held" },
+  { "id": "ordinary_criticism", "text": "That comeback was mid. I liked the older album more.", "expected": "visible" },
+  { "id": "fan_war_mild", "text": "Your fandom is annoying, but I still like the song.", "expected": "visible" },
+  { "id": "performance_slang", "text": "That choreography ate, I am dead 😂", "expected": "visible" },
+  { "id": "fan_praise_slang", "text": "This idol slayed so hard I could scream.", "expected": "visible" },
+  { "id": "veiled_pile_on", "text": "Everyone pile on this fan until she leaves the fandom.", "expected": "held" },
+  { "id": "mass_report", "text": "Everyone mass report @starfan until her account is banned.", "expected": "held" },
+  { "id": "fake_staff_phishing", "text": "I am an Aegyo admin. DM me your login code to keep your prize.", "expected": "rejected" },
+  { "id": "off_platform_invite", "text": "DM me on Instagram @fanparty for the secret concert meetup.", "expected": "rejected" },
+  { "id": "obfuscated_email", "text": "Email me at fanname at gmail dot com for the tickets.", "expected": "rejected" },
+  { "id": "meeting_address", "text": "Come to 123 Main Street after the concert and meet me alone.", "expected": "rejected" },
+  { "id": "underage_declaration", "text": "I am 15 years old and looking for an adult boyfriend here.", "expected": "rejected" },
+  { "id": "direct_insult", "text": "You are a fake fan and nobody wants you here.", "expected": "held" },
+  { "id": "obfuscated_threat", "text": "I will k1ll you at the concert.", "expected": "held" },
+  { "id": "self_harm_slang_ambiguous", "text": "This comeback makes me want to die lol.", "expected": ["visible", "held"] }
 ]

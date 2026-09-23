@@ -29,7 +29,6 @@ export default function ChatReview({ initialItems, initialRecent, initialMutes }
     try {
       const response = await fetch("/api/admin/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, decision: "mute", reason }) });
       if (!response.ok) throw new Error("Could not mute this user.");
-      setItems((current) => current.filter((item) => item.authorId !== userId));
       setMutes((current) => [...current.filter((item) => item.userId !== userId), { userId, name: items.find((item) => item.authorId === userId)?.author ?? recent.find((item) => item.authorId === userId)?.author ?? "Fan", until: new Date(Date.now() + 86400000).toISOString(), reason }]);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not mute this user."); }
     finally { setBusy(null); }

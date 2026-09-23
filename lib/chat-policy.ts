@@ -11,13 +11,15 @@ export function hasAegyoAccountSession(session: unknown): boolean {
 
 export function chatDisplayName(input: string | null | undefined, userId?: string): string {
   const name = (input ?? "").normalize("NFKC").replace(/\s+/g, " ").trim();
-  if (/^[\p{L}\p{N} _.-]{2,32}$/u.test(name)) return name;
+  if (/^[\p{L}\p{N} _.-]{2,32}$/u.test(name) && !/\b(?:admin|moderator|support|staff|official)\b/iu.test(name)) {
+    return userId ? `${crypto.createHash("sha256").update(userId).digest("hex").slice(0, 4)} · ${name}` : name;
+  }
   return userId ? `Fan-${crypto.createHash("sha256").update(userId).digest("hex").slice(0, 6)}` : "Fan";
 }
 
 export function validateChatBody(input: unknown): ChatValidation {
   if (typeof input !== "string") return { ok: false, error: "Write a message first." };
-  const body = input.normalize("NFKC").replace(/\r\n?/g, "\n").replace(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/g, " ").replace(/[^\S\n]+/g, " ").replace(/ *\n */g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  const body = input.normalize("NFKC").replace(/\r\n?/g, "\n").replace(/[\u200b-\u200d\u2060\u202a-\u202e\ufeff]/g, "").replace(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/g, " ").replace(/[^\S\n]+/g, " ").replace(/ *\n */g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   const length = [...body].length;
   if (length < 2 || length > 500) return { ok: false, error: "Messages must be 2–500 characters." };
   if (/https?:\/\/|www\.|\b(?:[a-z0-9-]+\.)+[a-z]{2,24}(?:[/?#:]\S*)?\b/i.test(body)) {
@@ -25,6 +27,18 @@ export function validateChatBody(input: unknown): ChatValidation {
   }
   if (/[\w.+-]+@[\w.-]+\.[a-z]{2,}/i.test(body) || /(?:\+?\d[\d\s().-]{8,}\d)/.test(body)) {
     return { ok: false, error: "Please do not share contact details in chat." };
+  }
+  if (/\b[\w.+-]+\s*(?:at|\(at\))\s*(?:gmail|hotmail|yahoo|outlook|icloud|proton|[\w-]+)\s*(?:dot|\(dot\))\s*(?:com|net|org)\b/iu.test(body) ||
+      /\b(?:dm|message|contact|follow|find|add)\s+(?:me|us|my)\b.{0,45}\b(?:instagram|insta|tiktok|snapchat|discord|telegram|whatsapp|wechat)\b/iu.test(body) ||
+      /\b\d{1,5}\s+(?:[\p{L}]+\s+){0,3}(?:street|st|avenue|ave|road|rd|lane|ln|boulevard|blvd)\b/iu.test(body)) {
+    return { ok: false, error: "Please do not share contact details or meeting addresses in chat." };
+  }
+  if (/\b(?:i['’]?m|i am|we['’]?re|we are)\s+(?:an?\s+)?(?:aegyo|myosin)\s+(?:admin|moderator|staff|support)\b/iu.test(body) ||
+      /\b(?:send|share|give)\s+(?:me|us)\s+(?:your\s+)?(?:login|verification|one[- ]time|2fa)?\s*(?:code|password)\b/iu.test(body)) {
+    return { ok: false, error: "Staff will never ask for login codes or passwords in chat." };
+  }
+  if (/\b(?:i['’]?m|i am)\s+(?:1[0-5]|[1-9])\s*(?:years? old|yo)\b/iu.test(body)) {
+    return { ok: false, error: "Chat is for fans aged 16 or older." };
   }
   if (/(.)\1{11,}/u.test(body) || /\b(\S+)(?:\s+\1){5,}\b/iu.test(body)) {
     return { ok: false, error: "Please avoid repeated text." };
@@ -41,11 +55,15 @@ export function decideModeration(_body: string, result: ModerationResult): "visi
   const categories = result.categories;
   if (!categories || Object.keys(categories).length === 0 ||
       Object.values(categories).some((active) => typeof active !== "boolean")) throw new Error("moderation_unavailable");
-  if (result.flagged === false) return Object.values(categories).some((active) => active === true) ? "held" : "visible";
+  if (result.flagged === false) return Object.values(categories).some((active) => active === true) || shouldHoldChatBody(_body) ? "held" : "visible";
   if (result.flagged !== true) throw new Error("moderation_unavailable");
   // A flagged message stays private even when a score is near the threshold.
   // Moderators can approve fandom slang without risking an automatic publish.
   return "held";
+}
+
+export function shouldHoldChatBody(body: string): boolean {
+  return /\b(?:everyone|all of us|let['’]?s)\s+(?:mass\s+)?report\b|\b(?:pile on|dogpile|harass)\s+(?:this|that|the|a|her|him|them)\b/iu.test(body);
 }
 
 export async function classifyChatBody(body: string): Promise<"visible" | "held"> {

@@ -72,9 +72,9 @@ export default function FanChatbox({ canPost, signedIn, fullPage = false }: { ca
     if (dockHidden) return;
     try { setSeenAt(localStorage.getItem(seenKey) || ""); } catch { /* storage optional */ }
     void refresh();
-    const interval = window.setInterval(() => { if (!document.hidden) void refresh(); }, 15000);
+    const interval = window.setInterval(() => { if (!document.hidden) void refresh(); }, open || fullPage ? 15000 : 30000);
     return () => window.clearInterval(interval);
-  }, [refresh, dockHidden]);
+  }, [refresh, dockHidden, open, fullPage]);
 
   useEffect(() => {
     if (!open || !messages.length) return;
