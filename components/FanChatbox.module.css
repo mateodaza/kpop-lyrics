@@ -74,7 +74,7 @@
 .compose a { color: #ffaccd; text-underline-offset: 2px; }
 .compose small { display: block; margin-top: 8px; color: #bec7d3; font-size: 10px; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-.open:not(.fullPage) { display: flex; flex-direction: column; max-height: calc(100dvh - 40px); }
+.open:not(.fullPage) { display: flex; flex-direction: column; max-height: calc(100dvh - 92px - env(safe-area-inset-bottom)); }
 .open:not(.fullPage) .room { flex: 1 1 auto; min-height: 0; }
 @media (max-width: 600px) {
   .shell { right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); width: min(390px, calc(100vw - 24px)); border-radius: 14px; }
