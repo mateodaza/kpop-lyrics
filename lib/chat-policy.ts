@@ -22,10 +22,21 @@ export function chatDisplayName(input: string | null | undefined, userId?: strin
   const compact = roleScan.replace(/[^a-z]/g, "");
   const roleName = /(?:^|[ _.-])(?:admins?|mods?|moderators?|staff|support|official)(?:$|[ _.-])/u.test(roleScan);
   const brandTeam = /\b(?:aegyo|myosin)\b.*\bteam\b|\bteam\b.*\b(?:aegyo|myosin)\b/u.test(roleScan) || /(?:aegyo|myosin)(?:team|mod|admin|staff|support|official)/u.test(compact);
-  if (/^[\p{L}\p{N} _.-]{2,32}$/u.test(name) && !roleName && !brandTeam) {
+  const brandName = /^(?:aegyo|aegyoarena|myosin)$/u.test(compact);
+  if (/^[\p{L}\p{N} _.-]{2,32}$/u.test(name) && !roleName && !brandTeam && !brandName) {
     return userId ? `${crypto.createHash("sha256").update(userId).digest("hex").slice(0, 6)} · ${[...name].slice(0, 23).join("")}` : name;
   }
   return userId ? `Fan-${crypto.createHash("sha256").update(userId).digest("hex").slice(0, 6)}` : "Fan";
+}
+
+function hasUnformattedPhone(body: string): boolean {
+  for (const match of body.matchAll(/(?:^|[^\d])(\+?\d{9,15})(?=$|[^\d])/g)) {
+    const after = body.slice((match.index ?? 0) + match[0].length);
+    // Large stream counts are common fan conversation, not contact details.
+    if (/^\s*(?:views?|streams?|likes?|plays?|votes?|followers?|subscribers?)\b/iu.test(after)) continue;
+    return true;
+  }
+  return false;
 }
 
 export function validateChatBody(input: unknown): ChatValidation {
@@ -37,13 +48,12 @@ export function validateChatBody(input: unknown): ChatValidation {
   if (/https?:\/\/|www\.|\b(?:[a-z0-9-]+\.)+(?:com|net|org|gg|io|app|dev|ai|co|me|xyz|tv|ly|info|site|online|club|shop|kr|uk|us|ca|jp|es|fr|de)(?:[/?#:]\S*)?\b/i.test(linkScan)) {
     return { ok: false, error: "Links are not allowed in the chat." };
   }
-  if (/[\w.+-]+@[\w.-]+\.[a-z]{2,}/i.test(body) || /(?:^|[^\d])\+?\d{9,15}(?=$|[^\d])/.test(body) || /(?:^|[^\d])(?:\+?\d{1,3}[\s.-])?(?:\(\d{2,3}\)|\d{2,3})[\s.-]\d{3,4}[\s.-]\d{4}\b/.test(body)) {
+  if (/[\w.+-]+@[\w.-]+\.[a-z]{2,}/i.test(body) || hasUnformattedPhone(body) || /(?:^|[^\d])(?:\+?\d{1,3}[\s.-])?(?:\(\d{2,3}\)|\d{2,3})[\s.-]\d{3,4}[\s.-]\d{4}\b/.test(body)) {
     return { ok: false, error: "Please do not share contact details in chat." };
   }
   if (/\b[\w.+-]+\s*(?:at|\(at\))\s*(?:gmail|hotmail|yahoo|outlook|icloud|proton|[\w-]+)\s*(?:dot|\(dot\))\s*(?:com|net|org)\b/iu.test(body) ||
-      /\b(?:dm|message|contact|follow|find|add)\s+(?:me|us|my)\b.{0,45}\b(?:instagram|insta|tiktok|snapchat|discord|telegram|whatsapp|wechat|twitter|threads|kakaotalk|weverse|x)\b/iu.test(body) ||
-      /\b(?:kakao(?:talk)?|telegram|discord|instagram|insta|snapchat|tiktok|whatsapp|wechat|twitter|threads|weverse)\s+(?:id|handle|username|user)\s*[:=]\s*@?[\w.-]{2,}/iu.test(body) ||
-      /\b(?:kakao(?:talk)?|telegram|discord|instagram|insta|snapchat|tiktok|whatsapp|wechat|twitter|threads|weverse)\s*[:=]\s*@[\w.-]{2,}/iu.test(body) ||
+      /\b(?:dm|message|contact|follow|find|add)\s+(?:me|us|my)\b.{0,45}\b(?:instagram|insta|tiktok|snap(?:chat)?|discord|telegram|whatsapp|wechat|twitter|threads|kakao(?:talk)?|line|weverse|x)\b/iu.test(body) ||
+      /\b(?:kakao(?:talk)?|telegram|discord|instagram|insta|snap(?:chat)?|tiktok|whatsapp|wechat|twitter|threads|weverse|line)\s*(?:(?:id|handle|username|user)\s*)?[:=]\s*@?[\w.-]{2,}/iu.test(body) ||
       /\b\d{1,5}\s+(?:[\p{L}]+\s+){1,3}(?:street|st|avenue|ave|road|rd|lane|ln|boulevard|blvd)\b/iu.test(body)) {
     return { ok: false, error: "Please do not share contact details or meeting addresses in chat." };
   }
@@ -51,7 +61,7 @@ export function validateChatBody(input: unknown): ChatValidation {
       /\b(?:send|share|give)\s+(?:me|us)\s+(?:your\s+)?(?:login|verification|one[- ]time|2fa)?\s*(?:code|password)\b/iu.test(body)) {
     return { ok: false, error: "Staff will never ask for login codes or passwords in chat." };
   }
-  if (/\b(?:i['’]?m|i am)\s+(?:1[0-5]|[1-9])(?:\s*(?:years? old|yo))?\b/iu.test(body) ||
+  if (/\b(?:i['’]?m|i am)\s+(?:1[0-5]|[1-9])\s*(?:years? old|yo|y\/o)\b/iu.test(body) ||
       /\b(?:tengo|soy)\s+(?:1[0-5]|[1-9])\s*a(?:ñ|n)os?\b/iu.test(body)) {
     return { ok: false, error: "Chat is for fans aged 16 or older." };
   }

@@ -14,15 +14,19 @@ test("normalizes text and rejects links, contact details, and repeated spam", ()
   assert.equal(validateChatBody("DM me on X @fanparty").ok, false);
   assert.equal(validateChatBody("kakao id: fanparty").ok, false);
   assert.equal(validateChatBody("telegram: @fanparty").ok, false);
+  for (const contact of ["kakao: kimbias", "line id: kimbias", "snap: kimbias99", "add me on kakao kimbias"]) {
+    assert.equal(validateChatBody(contact).ok, false, contact);
+  }
+  assert.equal(validateChatBody("Call me at 1234567890").ok, false);
   assert.equal(validateChatBody("Come to 123 Main Street after the show").ok, false);
   assert.equal(validateChatBody("I am an Aegyo admin. Send me your login code.").ok, false);
   assert.equal(validateChatBody("I am 15 years old and love this group").ok, false);
-  assert.equal(validateChatBody("Im 14 and love Stray Kids").ok, false);
+  assert.equal(validateChatBody("Im 14 years old and love Stray Kids").ok, false);
   assert.equal(validateChatBody("tengo 14 años").ok, false);
   assert.equal(validateChatBody("Contact me on Inst\u200bagram").ok, false);
   assert.equal(validateChatBody("aaaaaaaaaaaaaaaaaaaa").ok, false);
   assert.equal(validateChatBody("hi ".repeat(7)).ok, false);
-  for (const normal of ["BTS.ARMY forever", "debuted 2013 2014 2015", "ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ", "we did 3 road trips", "🔥"]) {
+  for (const normal of ["BTS.ARMY forever", "debuted 2013 2014 2015", "ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ", "we did 3 road trips", "🔥", "I'm 5 minutes late to the stream", "i'm 2 excited for this", "I am 1 of the OT7 stans", "I'm 12 years into stanning", "it has 120000000 views"]) {
     assert.equal(validateChatBody(normal).ok, true, normal);
   }
   assert.equal(chatDisplayName("  Moonlight   Star  "), "Moonlight Star");
@@ -31,7 +35,7 @@ test("normalizes text and rejects links, contact details, and repeated spam", ()
   assert.equal(chatDisplayName("fan@example.com"), "Fan");
   assert.match(chatDisplayName("fan@example.com", "user-123"), /^Fan-[0-9a-f]{6}$/);
   assert.match(chatDisplayName("Aegyo Admin", "user-123"), /^Fan-[0-9a-f]{6}$/);
-  for (const impersonation of ["Aegyo Team", "Aegyo Mod", "Admins", "0fficial"]) {
+  for (const impersonation of ["Aegyo Team", "Aegyo Mod", "Admins", "0fficial", "Aegyo", "AegyoArena", "Myosin"]) {
     assert.match(chatDisplayName(impersonation, "user-123"), /^Fan-[0-9a-f]{6}$/, impersonation);
   }
   process.env.AEGYO_APP_ORIGIN = "https://www.aegyoarena.com";

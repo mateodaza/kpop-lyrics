@@ -28,10 +28,10 @@
 
 ## Limits and privacy
 
-- Text only, 2–500 characters; links, contact details, meeting addresses, fake staff claims, requests for login codes, and repeated spam are rejected before classification. Coordinated pile-ons and mass-report calls are held for review even if the model does not flag them. Display names receive a stable private tag so duplicate names are distinguishable.
+- Text only, 2–500 characters or one emoji; links, contact details, meeting addresses, fake staff claims, requests for login codes, and repeated spam are rejected before classification. Large view/stream/like counts are accepted as fan conversation. Coordinated pile-ons and mass-report calls are held for review even if the model does not flag them. Display names receive a stable private tag so duplicate names are distinguishable.
 - Posting requires acceptance of Fan Chat Terms version `2026-09-23` and a self-declaration of age 16 or older. The server checks the current version on every post. Existing accounts see the same one-time gate; reading remains public. No birth date is collected for chat.
 - Per account: one accepted/pending posting attempt per 8 seconds, 8 per 5 minutes, 60 per day, plus at most 3 moderation-outage retries per 5 minutes. Site-wide caps are 120 attempts per minute and 500 per 5 minutes. An authenticated reporter can file five reports per day and one report per message. Limits use database transactions and advisory locks across app instances.
-- Moderators can hide/approve messages and apply 24-hour chat mutes; each action is recorded as an append-only moderation event. They cannot mute themselves or an equal/higher role.
+- Moderators can hide/approve messages and apply 24-hour chat mutes; each action is recorded as an append-only moderation event. They cannot mute themselves or an equal/higher role. A new report after approval reopens the message in the review queue without hiding it; two new independent reports hide it again.
 - Chat tables hold local user IDs, display content, report reason codes, and review data. They do not copy email addresses or IP addresses. The classifier receives only message text.
 - The read endpoint returns at most 60 recent visible messages and is polled every 15 seconds in the open room or 30 seconds in the collapsed widget while the browser tab is visible. It does not claim an online-user count.
 - If the safety provider has an outage, posting pauses. Operators should monitor 503s and never bypass screening to restore activity.
