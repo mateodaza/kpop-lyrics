@@ -547,6 +547,11 @@ canvas { max-width: 100% !important; }
 a { color: #ff6fa8; }
 .genius-nav a { color: #2C3340; }   /* keep header links dark on the white bar */
 
+/* The full fan room has its own scrolling message area. Keep this route's
+   site header in normal page flow so it never covers the room header when
+   the document scrolls. The menu still stacks above the chat widget. */
+body:has(.chat-page) .genius-nav { position: relative !important; }
+
 /* Daebak Rewards hero: stack text + video on mobile */
 @media (max-width: 768px) {
   .dr-hero { grid-template-columns: 1fr !important; }
