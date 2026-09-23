@@ -34,18 +34,16 @@ export function validateChatBody(input: unknown): ChatValidation {
 type ModerationResult = {
   flagged?: unknown;
   categories?: Record<string, unknown>;
-  category_scores?: Record<string, unknown>;
 };
 
-export function decideModeration(body: string, result: ModerationResult): "visible" | "held" {
-  if (result.flagged === false) return Object.values(result.categories ?? {}).some((active) => active === true) ? "held" : "visible";
-  if (result.flagged !== true) throw new Error("moderation_unavailable");
+export function decideModeration(_body: string, result: ModerationResult): "visible" | "held" {
   const categories = result.categories;
-  const scores = result.category_scores;
-  if (categories && scores && categories.harassment === true &&
-      Object.entries(categories).every(([name, active]) => name === "harassment" || active !== true) &&
-      typeof scores.harassment === "number" && scores.harassment < 0.85 &&
-      !/(?:^|\s)(?:you|your|u|ur)\b|@[\w.]+/i.test(body)) return "visible";
+  if (!categories || Object.keys(categories).length === 0 ||
+      Object.values(categories).some((active) => typeof active !== "boolean")) throw new Error("moderation_unavailable");
+  if (result.flagged === false) return Object.values(categories).some((active) => active === true) ? "held" : "visible";
+  if (result.flagged !== true) throw new Error("moderation_unavailable");
+  // A flagged message stays private even when a score is near the threshold.
+  // Moderators can approve fandom slang without risking an automatic publish.
   return "held";
 }
 
@@ -73,10 +71,17 @@ export function sameOrigin(request: Request): boolean {
   if (!configured) return false;
   try {
     const expected = new URL(configured);
+    const postedFrom = new URL(origin);
+    const allowedHosts = new Set([expected.host]);
+    if (expected.hostname === "aegyoarena.com" || expected.hostname === "www.aegyoarena.com") {
+      allowedHosts.add("aegyoarena.com");
+      allowedHosts.add("www.aegyoarena.com");
+    }
+    if (postedFrom.protocol !== expected.protocol || !allowedHosts.has(postedFrom.host)) return false;
     const observed = new URL(request.url);
-    const direct = request.headers.get("host") === expected.host || observed.host === expected.host;
-    const forwarded = request.headers.get("x-forwarded-host") === expected.host &&
-      request.headers.get("x-forwarded-proto") === expected.protocol.slice(0, -1);
-    return new URL(origin).origin === expected.origin && (direct || forwarded);
+    const directHost = request.headers.get("host") ?? observed.host;
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    return directHost === postedFrom.host || (forwardedHost === postedFrom.host &&
+      request.headers.get("x-forwarded-proto") === postedFrom.protocol.slice(0, -1));
   } catch { return false; }
 }

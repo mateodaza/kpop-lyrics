@@ -11,8 +11,9 @@ let failures = 0;
 for (const item of cases) {
   try {
     const actual = await classifyChatBody(item.text);
-    const ok = actual === item.expected;
-    process.stdout.write(`${ok ? "PASS" : "FAIL"} ${item.id}: ${actual} (expected ${item.expected})\n`);
+    const allowed = Array.isArray(item.expected) ? item.expected : [item.expected];
+    const ok = allowed.includes(actual);
+    process.stdout.write(`${ok ? "PASS" : "FAIL"} ${item.id}: ${actual} (expected ${allowed.join(" or ")})\n`);
     if (!ok) failures++;
   } catch {
     process.stdout.write(`ERROR ${item.id}: moderation endpoint unavailable\n`);

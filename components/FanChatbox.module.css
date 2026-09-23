@@ -83,7 +83,7 @@
   .open .toggle { height: 64px; min-height: 64px; padding: 12px 16px; }
   .room { height: calc(100% - 64px); }
 }
-.fullPage { position: relative; right: auto; bottom: auto; width: 100%; height: min(75dvh, 760px); min-height: 520px; margin: 0; border-radius: 16px; }
+.fullPage { position: relative; right: auto; bottom: auto; width: 100%; height: min(75dvh, calc(100dvh - 275px), 760px); min-height: 420px; margin: 0; border-radius: 16px; }
 .fullHeader { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 64px; padding: 12px 20px; background: #202632; }
 .fullHeaderTitle { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .fullHeaderTitle strong { display: flex; align-items: center; gap: 9px; font-size: 17px; }
@@ -97,8 +97,8 @@
 .fullPage .compose { padding: 16px 20px 18px; }
 .fullPage .composerRow textarea { font-size: 14px; }
 @media (max-width: 600px) {
-  .fullPage { width: 100%; height: min(78dvh, 700px); min-height: 460px; border-radius: 14px; }
-  .fullPage.awaitingAgreement { height: min(62dvh, 540px); min-height: 450px; }
+  .fullPage { width: 100%; height: min(78dvh, calc(100dvh - 260px), 700px); min-height: 380px; border-radius: 14px; }
+  .fullPage.awaitingAgreement { height: min(62dvh, calc(100dvh - 260px), 540px); min-height: 380px; }
   .fullPage .list { padding: 10px 14px 16px; }
   .fullPage .messageLine { gap: 5px; font-size: 13px; }
   .fullPage .compose { padding: 12px 13px; }
