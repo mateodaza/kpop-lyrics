@@ -16,7 +16,7 @@ export default function ChatRulesPage() {
       <li><T en="No spam, repeated promotions, impersonation, or attempts to evade moderation." es="No se permite spam, promociones repetidas, suplantación ni intentos de evadir la moderación." /></li>
       <li><T en="Messages are public under your display name. Automated screening may hold a message for review; people can report messages, and moderators may remove them or temporarily mute accounts. Do not use chat for emergencies." es="Los mensajes son públicos bajo tu nombre visible. El filtro automático puede retener un mensaje para revisión; las personas pueden reportar mensajes y los moderadores pueden eliminarlos o silenciar cuentas temporalmente. No uses el chat para emergencias." /></li>
     </ol>
-    <p><T en="We keep ordinary messages for up to 30 days and held or reported messages for up to 90 days. See our" es="Conservamos los mensajes normales hasta 30 días y los retenidos o reportados hasta 90 días. Consulta nuestra" /> <Link href="/privacy-policy"><T en="Privacy Policy" es="Política de Privacidad" /></Link>.</p>
+    <p><T en="Messages leave public chat after 30 days. A daily cleanup deletes ordinary messages after 30 days and held or reported messages after 90 days. See our" es="Los mensajes desaparecen del chat público después de 30 días. Una limpieza diaria elimina los mensajes normales después de 30 días y los retenidos o reportados después de 90 días. Consulta nuestra" /> <Link href="/privacy-policy"><T en="Privacy Policy" es="Política de Privacidad" /></Link>.</p>
     <p className="chat-terms-version"><T en="Chat terms version" es="Versión de las reglas" /> {CHAT_RULES_VERSION}</p>
   </main>;
 }
