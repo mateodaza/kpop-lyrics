@@ -4,6 +4,7 @@ import { chatDisplayName, classifyChatBody, decideModeration, hasAegyoAccountSes
 
 test("normalizes text and rejects links, contact details, and repeated spam", () => {
   assert.equal(validateChatBody("  hello   Aegyo  ").ok, true);
+  assert.equal(validateChatBody("first line\nsecond line").body, "first line\nsecond line");
   assert.equal(validateChatBody("hello https://example.com").ok, false);
   assert.equal(validateChatBody("join discord.gg/fans").ok, false);
   assert.equal(validateChatBody("email me at fan@example.com").ok, false);

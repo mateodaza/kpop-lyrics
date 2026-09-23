@@ -16,7 +16,7 @@ export function chatDisplayName(input: string | null | undefined): string {
 
 export function validateChatBody(input: unknown): ChatValidation {
   if (typeof input !== "string") return { ok: false, error: "Write a message first." };
-  const body = input.normalize("NFKC").replace(/[\u0000-\u001f\u007f-\u009f]/g, " ").replace(/\s+/g, " ").trim();
+  const body = input.normalize("NFKC").replace(/\r\n?/g, "\n").replace(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/g, " ").replace(/[^\S\n]+/g, " ").replace(/ *\n */g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   const length = [...body].length;
   if (length < 2 || length > 500) return { ok: false, error: "Messages must be 2–500 characters." };
   if (/https?:\/\/|www\.|\b(?:[a-z0-9-]+\.)+[a-z]{2,24}(?:[/?#:]\S*)?\b/i.test(body)) {

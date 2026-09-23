@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getChatSession } from "@/lib/chat-auth";
 import { chatDisplayName, classifyChatBody, sameOrigin, validateChatBody } from "@/lib/chat-policy";
+import { hasCurrentChatParticipation } from "@/lib/chat-participation";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,10 @@ export async function POST(request: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: "Sign in with Aegyo Accounts to chat." }, { status: 401 });
   }
+  try {
+    const participation = await prisma.chatParticipation.findUnique({ where: { userId: session.userId } });
+    if (!hasCurrentChatParticipation(participation)) return NextResponse.json({ error: "Accept the fan chat rules and confirm you are at least 16 before posting.", code: "chat_agreement_required" }, { status: 403 });
+  } catch { return NextResponse.json({ error: "Could not check chat access." }, { status: 503 }); }
   if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: "Chat posting is temporarily unavailable." }, { status: 503 });
   if (Number(request.headers.get("content-length") ?? 0) > 2048) {
     return NextResponse.json({ error: "Message is too long." }, { status: 413 });
