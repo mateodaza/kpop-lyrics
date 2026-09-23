@@ -14,7 +14,7 @@ test("normalizes text and rejects links, contact details, and repeated spam", ()
   assert.equal(validateChatBody("DM me on X @fanparty").ok, false);
   assert.equal(validateChatBody("kakao id: fanparty").ok, false);
   assert.equal(validateChatBody("telegram: @fanparty").ok, false);
-  for (const contact of ["kakao: kimbias", "line id: kimbias", "snap: kimbias99", "add me on kakao kimbias"]) {
+  for (const contact of ["kakao: kimbias", "line id: kimbias", "line app: kimbias", "add me on line", "snap: kimbias99", "add me on kakao kimbias"]) {
     assert.equal(validateChatBody(contact).ok, false, contact);
   }
   assert.equal(validateChatBody("Call me at 1234567890").ok, false);
@@ -26,7 +26,7 @@ test("normalizes text and rejects links, contact details, and repeated spam", ()
   assert.equal(validateChatBody("Contact me on Inst\u200bagram").ok, false);
   assert.equal(validateChatBody("aaaaaaaaaaaaaaaaaaaa").ok, false);
   assert.equal(validateChatBody("hi ".repeat(7)).ok, false);
-  for (const normal of ["BTS.ARMY forever", "debuted 2013 2014 2015", "ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ", "we did 3 road trips", "🔥", "I'm 5 minutes late to the stream", "i'm 2 excited for this", "I am 1 of the OT7 stans", "I'm 12 years into stanning", "it has 120000000 views"]) {
+  for (const normal of ["BTS.ARMY forever", "debuted 2013 2014 2015", "ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ", "we did 3 road trips", "🔥", "I'm 5 minutes late to the stream", "i'm 2 excited for this", "I am 1 of the OT7 stans", "I'm 12 years into stanning", "it has 120000000 views", "the rap line: absolute fire", "dance line: unmatched", "vocal line = best line", "best line: saranghae forever", "my favorite line: you are my universe", "find my favorite line in the chorus", "follow my line of thought here", "add me to the vocal line fan club"]) {
     assert.equal(validateChatBody(normal).ok, true, normal);
   }
   assert.equal(chatDisplayName("  Moonlight   Star  "), "Moonlight Star");

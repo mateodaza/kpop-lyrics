@@ -52,8 +52,10 @@ export function validateChatBody(input: unknown): ChatValidation {
     return { ok: false, error: "Please do not share contact details in chat." };
   }
   if (/\b[\w.+-]+\s*(?:at|\(at\))\s*(?:gmail|hotmail|yahoo|outlook|icloud|proton|[\w-]+)\s*(?:dot|\(dot\))\s*(?:com|net|org)\b/iu.test(body) ||
-      /\b(?:dm|message|contact|follow|find|add)\s+(?:me|us|my)\b.{0,45}\b(?:instagram|insta|tiktok|snap(?:chat)?|discord|telegram|whatsapp|wechat|twitter|threads|kakao(?:talk)?|line|weverse|x)\b/iu.test(body) ||
-      /\b(?:kakao(?:talk)?|telegram|discord|instagram|insta|snap(?:chat)?|tiktok|whatsapp|wechat|twitter|threads|weverse|line)\s*(?:(?:id|handle|username|user)\s*)?[:=]\s*@?[\w.-]{2,}/iu.test(body) ||
+      /\b(?:dm|message|contact|follow|find|add)\s+(?:me|us|my)\b.{0,45}\b(?:instagram|insta|tiktok|snap(?:chat)?|discord|telegram|whatsapp|wechat|twitter|threads|kakao(?:talk)?|weverse|x)\b/iu.test(body) ||
+      /\b(?:kakao(?:talk)?|telegram|discord|instagram|insta|snap(?:chat)?|tiktok|whatsapp|wechat|twitter|threads|weverse)\s*(?:(?:id|handle|username|user)\s*)?[:=]\s*@?[\w.-]{2,}/iu.test(body) ||
+      /\bline\s+(?:id|handle|username|user|app)\s*[:=]\s*@?[\w.-]{2,}/iu.test(body) ||
+      /\b(?:dm|message|contact|follow|find|add)\s+(?:me|us)\s+(?:on|in|at|via)\s+line\b/iu.test(body) ||
       /\b\d{1,5}\s+(?:[\p{L}]+\s+){1,3}(?:street|st|avenue|ave|road|rd|lane|ln|boulevard|blvd)\b/iu.test(body)) {
     return { ok: false, error: "Please do not share contact details or meeting addresses in chat." };
   }
