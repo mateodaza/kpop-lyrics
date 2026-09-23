@@ -3,7 +3,7 @@
 ## Current release state (2026-09-23)
 
 - The additive chat and participation tables are already present in the shared Aegyo database. The Railway preview is deployed with chat enabled; the live Aegyo service still has chat disabled.
-- The preview passed anonymous reads, shared-account sign-in, admin queue access, and the menu-over-chat layering check. The signed-in first-post check waits for the account holder to accept the age/rules screen.
+- The preview passed anonymous reads, shared-account sign-in, the age/rules gate, one safe signed-in post, public visibility, and admin removal of that test post. The menu covers the chat correctly, and the full room clears the header at desktop and mobile widths while scrolling.
 - The production `OPENAI_API_KEY` returned HTTP 200 from the moderation endpoint. Replace the temporary personal key with a Myosin-owned restricted key after launch; the owner has accepted that temporary use.
 - The cleanup Function currently targets the preview origin. Change its URL to the live origin after the production code is deployed, before retiring the preview.
 
