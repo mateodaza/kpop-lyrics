@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { chatDisplayName, classifyChatBody, hasAegyoAccountSession, sameOrigin, validateChatBody } from "../lib/chat-policy.ts";
+import { chatDisplayName, classifyChatBody, decideModeration, hasAegyoAccountSession, sameOrigin, validateChatBody } from "../lib/chat-policy.ts";
 
 test("normalizes text and rejects links, contact details, and repeated spam", () => {
   assert.equal(validateChatBody("  hello   Aegyo  ").ok, true);
@@ -11,10 +11,20 @@ test("normalizes text and rejects links, contact details, and repeated spam", ()
   assert.equal(validateChatBody("hi ".repeat(7)).ok, false);
   assert.equal(chatDisplayName("  Moonlight   Star  "), "Moonlight Star");
   assert.equal(chatDisplayName("fan@example.com"), "Fan");
-  assert.equal(sameOrigin(new Request("https://aegyoarena.com/api/chat", { headers: { origin: "https://aegyoarena.com" } })), true);
-  assert.equal(sameOrigin(new Request("https://aegyoarena.com/api/chat", { headers: { origin: "http://aegyoarena.com" } })), false);
+  process.env.AEGYO_APP_ORIGIN = "https://www.aegyoarena.com";
+  assert.equal(sameOrigin(new Request("https://internal.railway.app/api/chat", { headers: { origin: "https://www.aegyoarena.com", "x-forwarded-host": "www.aegyoarena.com", "x-forwarded-proto": "https" } })), true);
+  assert.equal(sameOrigin(new Request("https://internal.railway.app/api/chat", { headers: { origin: "https://evil.test", "x-forwarded-host": "www.aegyoarena.com", "x-forwarded-proto": "https" } })), false);
+  assert.equal(sameOrigin(new Request("https://internal.railway.app/api/chat", { headers: { origin: "https://www.aegyoarena.com", "x-forwarded-host": "evil.test", "x-forwarded-proto": "https" } })), false);
   assert.equal(hasAegyoAccountSession({ user: { email: "fan@example.com" }, providerSessionId: "provider-session" }), true);
   assert.equal(hasAegyoAccountSession({ user: { email: "fan@example.com", emailVerified: true } }), false);
+});
+
+test("moderation allows low-confidence indirect fan slang while holding directed abuse", () => {
+  const category = { flagged: true, categories: { harassment: true, hate: false }, category_scores: { harassment: 0.806 } };
+  assert.equal(decideModeration("She's a bad bitch on stage, wow.", category), "visible");
+  assert.equal(decideModeration("You are a bad bitch", category), "held");
+  assert.equal(decideModeration("That singer is a bitch", { ...category, category_scores: { harassment: 0.89 } }), "held");
+  assert.equal(decideModeration("I will hurt you", { ...category, categories: { harassment: true, "harassment/threatening": true } }), "held");
 });
 
 test("moderation fails closed without a key or a valid result", async () => {

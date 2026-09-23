@@ -156,6 +156,7 @@ model User {
   chatMessages   ChatMessage[]
   chatReports    ChatReport[]
   chatAttempts   ChatPostAttempt[]
+  chatMute       ChatMute?
 }
 
 model Session {
@@ -261,7 +262,32 @@ model ChatPostAttempt {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   bodyHash  String
+  outcome   String   @default("pending")
   createdAt DateTime @default(now())
 
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model ChatMute {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  until     DateTime
+  reason    String
+  actorId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatModerationEvent {
+  id        String   @id @default(cuid())
+  messageId String?
+  userId    String?
+  actorId   String?
+  action    String
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([messageId, createdAt])
   @@index([userId, createdAt])
 }

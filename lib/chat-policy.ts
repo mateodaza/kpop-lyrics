@@ -31,6 +31,24 @@ export function validateChatBody(input: unknown): ChatValidation {
   return { ok: true, body, bodyHash: crypto.createHash("sha256").update(body.toLocaleLowerCase()).digest("hex") };
 }
 
+type ModerationResult = {
+  flagged?: unknown;
+  categories?: Record<string, unknown>;
+  category_scores?: Record<string, unknown>;
+};
+
+export function decideModeration(body: string, result: ModerationResult): "visible" | "held" {
+  if (result.flagged === false) return Object.values(result.categories ?? {}).some((active) => active === true) ? "held" : "visible";
+  if (result.flagged !== true) throw new Error("moderation_unavailable");
+  const categories = result.categories;
+  const scores = result.category_scores;
+  if (categories && scores && categories.harassment === true &&
+      Object.entries(categories).every(([name, active]) => name === "harassment" || active !== true) &&
+      typeof scores.harassment === "number" && scores.harassment < 0.85 &&
+      !/(?:^|\s)(?:you|your|u|ur)\b|@[\w.]+/i.test(body)) return "visible";
+  return "held";
+}
+
 export async function classifyChatBody(body: string): Promise<"visible" | "held"> {
   const key = process.env.OPENAI_API_KEY;
   if (!key) throw new Error("moderation_unavailable");
@@ -42,14 +60,23 @@ export async function classifyChatBody(body: string): Promise<"visible" | "held"
     cache: "no-store",
   });
   if (!response.ok) throw new Error("moderation_unavailable");
-  const data = await response.json() as { results?: Array<{ flagged?: unknown }> };
-  const flagged = data.results?.[0]?.flagged;
-  if (typeof flagged !== "boolean") throw new Error("moderation_unavailable");
-  return flagged ? "held" : "visible";
+  const data = await response.json() as { results?: ModerationResult[] };
+  const result = data.results?.[0];
+  if (!result) throw new Error("moderation_unavailable");
+  return decideModeration(body, result);
 }
 
 export function sameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");
   if (!origin) return false;
-  try { return new URL(origin).origin === new URL(request.url).origin; } catch { return false; }
+  const configured = process.env.AEGYO_APP_ORIGIN;
+  if (!configured) return false;
+  try {
+    const expected = new URL(configured);
+    const observed = new URL(request.url);
+    const direct = request.headers.get("host") === expected.host || observed.host === expected.host;
+    const forwarded = request.headers.get("x-forwarded-host") === expected.host &&
+      request.headers.get("x-forwarded-proto") === expected.protocol.slice(0, -1);
+    return new URL(origin).origin === expected.origin && (direct || forwarded);
+  } catch { return false; }
 }

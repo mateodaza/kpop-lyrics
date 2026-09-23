@@ -6,6 +6,7 @@ import { sameOrigin } from "@/lib/chat-policy";
 const reasons = new Set(["abuse", "sexual", "spam", "personal_info", "other"]);
 
 export async function POST(request: NextRequest) {
+  if (process.env.AEGYO_CHAT_ENABLED !== "true") return NextResponse.json({ error: "Chat is not enabled." }, { status: 404 });
   if (!sameOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   const session = await getChatSession();
   if (!session) return NextResponse.json({ error: "Sign in with Aegyo Accounts to report a message." }, { status: 401 });
@@ -25,7 +26,10 @@ export async function POST(request: NextRequest) {
       if (prior) return "already_reported";
       await tx.chatReport.create({ data: { messageId, reporterId: session.userId, reason } });
       const count = await tx.chatReport.count({ where: { messageId } });
-      await tx.chatMessage.update({ where: { id: messageId }, data: count >= 2 ? { status: "held", moderationNote: "reports", reviewedAt: null, reviewedById: null } : { reviewedAt: null, reviewedById: null } });
+      if (count >= 2) {
+        await tx.chatMessage.update({ where: { id: messageId }, data: { status: "held", moderationNote: "reports", reviewedAt: null, reviewedById: null } });
+        await tx.chatModerationEvent.create({ data: { messageId, userId: message.authorId, action: "reports_hold", detail: String(count) } });
+      }
       return "reported";
     });
     if (result === "reported" || result === "already_reported") return NextResponse.json({ ok: true });

@@ -27,3 +27,4 @@ tsconfig.tsbuildinfo
 
 # Mac-only lockfile breaks Railway linux build — keep untracked (Railway uses npm install)
 package-lock.json
+.vercel/

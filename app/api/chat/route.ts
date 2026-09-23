@@ -12,6 +12,7 @@ function publicMessage(message: {
 }
 
 export async function GET() {
+  if (process.env.AEGYO_CHAT_ENABLED !== "true") return NextResponse.json({ error: "Chat is not enabled." }, { status: 404 });
   try {
     const messages = await prisma.chatMessage.findMany({
       where: { status: "visible", createdAt: { gte: new Date(Date.now() - 30 * 86400000) } },
@@ -25,6 +26,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (process.env.AEGYO_CHAT_ENABLED !== "true") return NextResponse.json({ error: "Chat is not enabled." }, { status: 404 });
   if (!sameOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   const session = await getChatSession();
   if (!session) {
@@ -38,31 +40,48 @@ export async function POST(request: NextRequest) {
   const checked = validateChatBody(input?.body);
   if (!checked.ok) return NextResponse.json({ error: checked.error }, { status: 422 });
 
-  // The database lock makes limits consistent across workers and concurrent tabs.
+  // The locks make per-user and site-wide limits consistent across workers.
   const now = new Date();
   try {
     const reservation = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('aegyo-chat-global'))::text`;
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${session.userId}))::text`;
+      const mute = await tx.chatMute.findUnique({ where: { userId: session.userId }, select: { until: true } });
+      if (mute && mute.until > now) return { kind: "muted" } as const;
+      const globalMinute = await tx.chatPostAttempt.count({ where: { createdAt: { gte: new Date(now.getTime() - 60000) } } });
+      const globalFiveMinutes = await tx.chatPostAttempt.count({ where: { createdAt: { gte: new Date(now.getTime() - 300000) } } });
+      if (globalMinute >= 120 || globalFiveMinutes >= 500) return { kind: "global_limit" } as const;
       const recent = await tx.chatPostAttempt.findMany({
         where: { userId: session.userId, createdAt: { gte: new Date(now.getTime() - 86400000) } },
-        select: { createdAt: true, bodyHash: true }, orderBy: { createdAt: "desc" }, take: 61,
+        select: { createdAt: true, bodyHash: true, outcome: true }, orderBy: { createdAt: "desc" }, take: 64,
       });
-      if (recent.some((a) => now.getTime() - a.createdAt.getTime() < 8000)) return "slow_down";
-      if (recent.filter((a) => now.getTime() - a.createdAt.getTime() < 300000).length >= 8 || recent.length >= 60) return "rate_limit";
-      if (recent.some((a) => a.bodyHash === checked.bodyHash && now.getTime() - a.createdAt.getTime() < 86400000)) return "duplicate";
-      await tx.chatPostAttempt.create({ data: { userId: session.userId, bodyHash: checked.bodyHash } });
-      return "reserved";
+      const failedRecent = recent.filter((a) => a.outcome === "failed" && now.getTime() - a.createdAt.getTime() < 300000);
+      if (failedRecent.length >= 3) return { kind: "retry_limit" } as const;
+      const active = recent.filter((a) => a.outcome !== "failed");
+      if (active.some((a) => now.getTime() - a.createdAt.getTime() < 8000)) return { kind: "slow_down" } as const;
+      if (active.filter((a) => now.getTime() - a.createdAt.getTime() < 300000).length >= 8 || active.length >= 60) return { kind: "rate_limit" } as const;
+      if (active.some((a) => a.bodyHash === checked.bodyHash)) return { kind: "duplicate" } as const;
+      const attempt = await tx.chatPostAttempt.create({ data: { userId: session.userId, bodyHash: checked.bodyHash }, select: { id: true } });
+      return { kind: "reserved", id: attempt.id } as const;
     });
-    if (reservation !== "reserved") {
-      return NextResponse.json({ error: reservation === "duplicate" ? "You already sent that message today." : "You're sending messages too quickly. Please try again later." }, { status: 429 });
+    if (reservation.kind !== "reserved") {
+      return NextResponse.json({ error: reservation.kind === "muted" ? "Your chat access is temporarily paused." : reservation.kind === "duplicate" ? "You already sent that message today." : "Chat is busy. Please try again later." }, { status: reservation.kind === "muted" ? 403 : 429 });
     }
     const authorName = chatDisplayName(session.user.displayName);
     let status: "visible" | "held";
-    try { status = await classifyChatBody(`${authorName}: ${checked.body}`); }
-    catch { return NextResponse.json({ error: "Safety check is unavailable. Please try again later." }, { status: 503 }); }
-    const message = await prisma.chatMessage.create({
-      data: { authorId: session.userId, authorName, body: checked.body, status, moderationNote: status === "held" ? "classifier" : null },
-      select: { id: true, body: true, createdAt: true, authorName: true },
+    try { status = await classifyChatBody(checked.body); }
+    catch {
+      await prisma.chatPostAttempt.update({ where: { id: reservation.id }, data: { outcome: "failed" } }).catch(() => undefined);
+      return NextResponse.json({ error: "Safety check is unavailable. Please try again later." }, { status: 503 });
+    }
+    const message = await prisma.$transaction(async (tx) => {
+      const created = await tx.chatMessage.create({
+        data: { authorId: session.userId, authorName, body: checked.body, status, moderationNote: status === "held" ? "classifier" : null },
+        select: { id: true, body: true, createdAt: true, authorName: true },
+      });
+      await tx.chatPostAttempt.update({ where: { id: reservation.id }, data: { outcome: status } });
+      if (status === "held") await tx.chatModerationEvent.create({ data: { messageId: created.id, userId: session.userId, action: "classifier_hold" } });
+      return created;
     });
     return NextResponse.json({ status, message: status === "visible" ? publicMessage(message) : null }, { status: 201 });
   } catch {

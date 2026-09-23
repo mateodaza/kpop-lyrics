@@ -128,7 +128,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <span><T en="Made with ♡ by the fandom" es="Hecho con ♡ por el fandom" /></span>
           </div>
         </footer>
-        <FanChatbox canPost={hasAegyoAccountSession(session)} signedIn={isLoggedIn} />
+        {process.env.AEGYO_CHAT_ENABLED === "true" && <FanChatbox canPost={hasAegyoAccountSession(session)} signedIn={isLoggedIn} />}
 
         {/* Google Analytics (gtag.js) — site traffic + paid-ads/referral source tracking */}
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-700MXJM1FW" strategy="afterInteractive" />

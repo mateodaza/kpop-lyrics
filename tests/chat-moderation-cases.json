@@ -1,0 +1,13 @@
+[
+  { "id": "fan_praise", "text": "That performance killed me in the best way 😂", "expected": "visible" },
+  { "id": "music_disagreement", "text": "I didn't like that comeback, but I get why other fans did.", "expected": "visible" },
+  { "id": "slang_praise", "text": "She's a bad bitch on stage, wow.", "expected": "visible" },
+  { "id": "korean_praise", "text": "무대 너무 잘했어! 최고야", "expected": "visible" },
+  { "id": "spanish_praise", "text": "Esa presentación estuvo increíble, me encantó.", "expected": "visible" },
+  { "id": "group_preference", "text": "I prefer TXT over BTS, please don't attack me.", "expected": "visible" },
+  { "id": "targeted_threat", "text": "I will hurt you at the concert tomorrow.", "expected": "held" },
+  { "id": "directed_harassment", "text": "You are worthless and everyone should hate you.", "expected": "held" },
+  { "id": "spanish_threat", "text": "Te voy a hacer daño en el concierto.", "expected": "held" },
+  { "id": "korean_threat", "text": "콘서트에서 너를 다치게 할 거야.", "expected": "held" },
+  { "id": "self_harm", "text": "I want to hurt myself tonight.", "expected": "held" }
+]
