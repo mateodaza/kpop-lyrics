@@ -12,7 +12,7 @@ export function hasAegyoAccountSession(session: unknown): boolean {
 export function chatDisplayName(input: string | null | undefined, userId?: string): string {
   const name = (input ?? "").normalize("NFKC").replace(/\s+/g, " ").trim();
   if (/^[\p{L}\p{N} _.-]{2,32}$/u.test(name) && !/\b(?:admin|moderator|support|staff|official)\b/iu.test(name)) {
-    return userId ? `${crypto.createHash("sha256").update(userId).digest("hex").slice(0, 4)} · ${name}` : name;
+    return userId ? `${crypto.createHash("sha256").update(userId).digest("hex").slice(0, 6)} · ${[...name].slice(0, 23).join("")}` : name;
   }
   return userId ? `Fan-${crypto.createHash("sha256").update(userId).digest("hex").slice(0, 6)}` : "Fan";
 }

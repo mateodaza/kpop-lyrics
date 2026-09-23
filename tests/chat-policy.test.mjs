@@ -17,7 +17,8 @@ test("normalizes text and rejects links, contact details, and repeated spam", ()
   assert.equal(validateChatBody("aaaaaaaaaaaaaaaaaaaa").ok, false);
   assert.equal(validateChatBody("hi ".repeat(7)).ok, false);
   assert.equal(chatDisplayName("  Moonlight   Star  "), "Moonlight Star");
-  assert.match(chatDisplayName("Moonlight Star", "user-123"), /^[0-9a-f]{4} · Moonlight Star$/);
+  assert.match(chatDisplayName("Moonlight Star", "user-123"), /^[0-9a-f]{6} · Moonlight Star$/);
+  assert.equal([...chatDisplayName("A".repeat(32), "user-123")].length, 32);
   assert.equal(chatDisplayName("fan@example.com"), "Fan");
   assert.match(chatDisplayName("fan@example.com", "user-123"), /^Fan-[0-9a-f]{6}$/);
   assert.match(chatDisplayName("Aegyo Admin", "user-123"), /^Fan-[0-9a-f]{6}$/);
