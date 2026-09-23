@@ -29,7 +29,7 @@ export function validateChatBody(input: unknown): ChatValidation {
     return { ok: false, error: "Please do not share contact details in chat." };
   }
   if (/\b[\w.+-]+\s*(?:at|\(at\))\s*(?:gmail|hotmail|yahoo|outlook|icloud|proton|[\w-]+)\s*(?:dot|\(dot\))\s*(?:com|net|org)\b/iu.test(body) ||
-      /\b(?:dm|message|contact|follow|find|add)\s+(?:me|us|my)\b.{0,45}\b(?:instagram|insta|tiktok|snapchat|discord|telegram|whatsapp|wechat)\b/iu.test(body) ||
+      /\b(?:dm|message|contact|follow|find|add)\s+(?:me|us|my)\b.{0,45}\b(?:instagram|insta|tiktok|snapchat|discord|telegram|whatsapp|wechat|twitter|threads|kakaotalk|weverse|x)\b/iu.test(body) ||
       /\b\d{1,5}\s+(?:[\p{L}]+\s+){0,3}(?:street|st|avenue|ave|road|rd|lane|ln|boulevard|blvd)\b/iu.test(body)) {
     return { ok: false, error: "Please do not share contact details or meeting addresses in chat." };
   }

@@ -10,6 +10,7 @@ test("normalizes text and rejects links, contact details, and repeated spam", ()
   assert.equal(validateChatBody("email me at fan@example.com").ok, false);
   assert.equal(validateChatBody("Email me at fanname at gmail dot com").ok, false);
   assert.equal(validateChatBody("DM me on Instagram @fanparty").ok, false);
+  assert.equal(validateChatBody("DM me on X @fanparty").ok, false);
   assert.equal(validateChatBody("Come to 123 Main Street after the show").ok, false);
   assert.equal(validateChatBody("I am an Aegyo admin. Send me your login code.").ok, false);
   assert.equal(validateChatBody("I am 15 years old and love this group").ok, false);
