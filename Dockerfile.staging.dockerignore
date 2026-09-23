@@ -11,5 +11,6 @@
 !middleware.ts
 !next-env.d.ts
 !next.config.ts
+!next.config.preview-runtime.mjs
 !postcss.config.mjs
 !tsconfig.json
