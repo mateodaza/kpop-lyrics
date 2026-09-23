@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPolicyPage() {
-  return <LegalDoc content={CONTENT} />;
+  return <LegalDoc content={`${CONTENT}\n\nFan Chat\nFan chat messages are public and linked to your display name. We use automated safety screening before publication and allow signed-in members to report messages for human review. Message text is sent to our safety screening provider for classification. We keep ordinary chat messages for up to 30 days and messages held or reported for up to 90 days; short-lived posting records used to prevent spam are deleted after one day. Moderators can remove content sooner. Do not post personal contact information in chat.`} />;
 }
