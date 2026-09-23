@@ -60,6 +60,7 @@ export default async function AdminPage() {
       <p style={{ color: "var(--ink-dim)", fontSize: "0.92rem", marginTop: 0, marginBottom: 22 }}>
         Signed in as <strong style={{ color: "var(--ink)" }}>{session.user.displayName ?? session.user.email}</strong> · role <strong style={{ color: "var(--sakura)" }}>{ROLE_LABEL[role]}</strong>
       </p>
+      <p><Link href="/admin/chat" style={{ color: "var(--sakura)" }}>Review fan chat →</Link></p>
       <AdminPortal
         stats={stats}
         pending={pending.map(ser)}

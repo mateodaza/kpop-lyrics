@@ -21,7 +21,9 @@
     "auth:provisioning-postgres-proof": "./tests/shared-auth-provisioning-postgres-proof.sh",
     "auth:install-mappings": "node scripts/shared-auth/install-mappings.mjs",
     "staging:init-synthetic": "node scripts/staging/initialize-synthetic.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:chat": "node --experimental-strip-types --test tests/chat-policy.test.mjs tests/chat-participation.test.mjs tests/chat-request.test.mjs",
+    "chat:eval": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/chat/evaluate-moderation.mjs"
   },
   "dependencies": {
     "@elastic/elasticsearch": "^8.19.1",

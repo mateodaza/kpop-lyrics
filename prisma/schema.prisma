@@ -153,6 +153,11 @@ model User {
   favorites      Favorite[]
   suggestedEdits SuggestedEdit[]
   comments       Comment[]
+  chatMessages   ChatMessage[]
+  chatReports    ChatReport[]
+  chatAttempts   ChatPostAttempt[]
+  chatMute       ChatMute?
+  chatParticipation ChatParticipation?
 }
 
 model Session {
@@ -221,4 +226,77 @@ model AuthCutoverLatch {
   id          String   @id
   activatedAt DateTime @default(now())
   mappingDigest String
+}
+
+model ChatMessage {
+  id             String       @id @default(cuid())
+  authorId       String
+  author         User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorName     String       @db.VarChar(32)
+  body           String       @db.VarChar(500)
+  status         String       @default("visible")
+  moderationNote String?
+  reviewedById   String?
+  reviewedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  reports        ChatReport[]
+
+  @@index([status, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model ChatReport {
+  id         String      @id @default(cuid())
+  messageId  String
+  message    ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User        @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason     String
+  createdAt  DateTime    @default(now())
+
+  @@unique([messageId, reporterId])
+  @@index([createdAt])
+}
+
+model ChatPostAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bodyHash  String
+  outcome   String   @default("pending")
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model ChatMute {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  until     DateTime
+  reason    String
+  actorId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatParticipation {
+  userId          String   @id
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rulesVersion    String
+  acceptedAt      DateTime @default(now())
+  age16ConfirmedAt DateTime
+}
+
+model ChatModerationEvent {
+  id        String   @id @default(cuid())
+  messageId String?
+  userId    String?
+  actorId   String?
+  action    String
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([messageId, createdAt])
+  @@index([userId, createdAt])
 }
