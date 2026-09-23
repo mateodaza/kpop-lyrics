@@ -38,14 +38,27 @@ function langFromAcceptLanguage(al: string | null): "es" | "en" | null {
   return null;
 }
 
+function withRailwayNoIndex(req: NextRequest, response: NextResponse): NextResponse {
+  // Railway preview domains use the live database but are never canonical pages.
+  if (req.nextUrl.hostname.endsWith(".up.railway.app")) response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  return response;
+}
+
 export function middleware(req: NextRequest) {
+  if (process.env.AEGYO_CHAT_WRITE_ALLOWLIST !== undefined && req.nextUrl.hostname.endsWith(".up.railway.app") && !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
+      !/^\/api\/(?:chat(?:\/(?:participation|report|cleanup))?|admin\/chat|auth\/(?:logout|shared\/logout))$/.test(req.nextUrl.pathname)) {
+    return withRailwayNoIndex(req, NextResponse.json(
+      { code: "preview_read_only", error: "This preview does not accept site changes." },
+      { status: 403, headers: { "Cache-Control": "no-store" } },
+    ));
+  }
   if (
     shouldBlockForAuthCutover({
       method: req.method,
       pathname: req.nextUrl.pathname,
     })
   ) {
-    return NextResponse.json(
+    return withRailwayNoIndex(req, NextResponse.json(
       {
         code: "cutover_freeze",
         error: "This action is temporarily unavailable. Please try again shortly.",
@@ -57,16 +70,16 @@ export function middleware(req: NextRequest) {
           "retry-after": "60",
         },
       },
-    );
+    ));
   }
 
   // API reads and unfrozen writes should retain their existing behavior. Geo
   // language cookies are page-only and must not be added to API responses.
-  if (req.nextUrl.pathname.startsWith("/api/")) return NextResponse.next();
+  if (req.nextUrl.pathname.startsWith("/api/")) return withRailwayNoIndex(req, NextResponse.next());
 
   // Respect any prior decision — an explicit choice or an already-seeded hint.
   if (req.cookies.get("aegyo-lang") || req.cookies.get("aegyo_geo")) {
-    return NextResponse.next();
+    return withRailwayNoIndex(req, NextResponse.next());
   }
 
   const country = countryHeader(req);
@@ -82,7 +95,7 @@ export function middleware(req: NextRequest) {
       sameSite: "lax",
     });
   }
-  return res;
+  return withRailwayNoIndex(req, res);
 }
 
 // Run on pages and APIs, while skipping static assets and the image optimizer.

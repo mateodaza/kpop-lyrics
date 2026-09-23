@@ -5,6 +5,7 @@ import { rankOf, RANK, type Role } from "@/lib/roles";
 import { sameOrigin } from "@/lib/chat-policy";
 import { prisma } from "@/lib/prisma";
 import { readChatJson } from "@/lib/chat-request";
+import { logChatFailure } from "@/lib/chat-logging";
 
 export async function POST(request: NextRequest) {
   if (process.env.AEGYO_CHAT_ENABLED !== "true") return NextResponse.json({ error: "Chat is not enabled." }, { status: 404 });
@@ -32,7 +33,12 @@ export async function POST(request: NextRequest) {
         await tx.chatModerationEvent.create({ data: { userId, actorId: session.userId, action: input.decision as string, detail: reason || null } });
       });
       return NextResponse.json({ ok: true });
-    } catch { return NextResponse.json({ error: "Mute change could not be saved." }, { status: 503 }); }
+    } catch (error) {
+      if (error instanceof Error && error.message === "protected_user") return NextResponse.json({ error: "This account cannot be muted by your role." }, { status: 403 });
+      if (error instanceof Error && error.message === "user_not_found") return NextResponse.json({ error: "This account no longer exists." }, { status: 404 });
+      logChatFailure("mute", error);
+      return NextResponse.json({ error: "Mute change could not be saved." }, { status: 503 });
+    }
   }
   const id = typeof input?.id === "string" ? input.id : "";
   const decision = input?.decision === "visible" || input?.decision === "removed" ? input.decision : null;
@@ -40,7 +46,8 @@ export async function POST(request: NextRequest) {
   try {
     const message = await prisma.$transaction(async (tx) => {
       const existing = await tx.chatMessage.findUnique({ where: { id }, select: { authorId: true } });
-      if (!existing || (decision === "visible" && existing.authorId === session.userId && role !== "superadmin")) throw new Error("self_review_forbidden");
+      if (!existing) throw new Error("message_not_found");
+      if (decision === "visible" && existing.authorId === session.userId && role !== "superadmin") throw new Error("self_review_forbidden");
       const updated = await tx.chatMessage.update({
         where: { id },
         data: { status: decision, reviewedById: session.userId, reviewedAt: new Date(), moderationNote: decision === "removed" ? "operator" : null },
@@ -50,5 +57,10 @@ export async function POST(request: NextRequest) {
       return updated;
     });
     return NextResponse.json({ ok: true, id: message.id });
-  } catch { return NextResponse.json({ error: "Review could not be saved." }, { status: 503 }); }
+  } catch (error) {
+    if (error instanceof Error && error.message === "self_review_forbidden") return NextResponse.json({ error: "Another moderator must approve your message." }, { status: 403 });
+    if (error instanceof Error && error.message === "message_not_found") return NextResponse.json({ error: "This message no longer exists." }, { status: 404 });
+    logChatFailure("review", error);
+    return NextResponse.json({ error: "Review could not be saved." }, { status: 503 });
+  }
 }

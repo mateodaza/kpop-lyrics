@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getChatSession } from "@/lib/chat-auth";
-import { chatDisplayName, classifyChatBody, sameOrigin, validateChatBody } from "@/lib/chat-policy";
+import { canWriteChatInEnvironment, chatDisplayName, classifyChatBody, sameOrigin, validateChatBody } from "@/lib/chat-policy";
 import { hasCurrentChatParticipation } from "@/lib/chat-participation";
 import { readChatJson } from "@/lib/chat-request";
+import { logChatFailure } from "@/lib/chat-logging";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,8 @@ export async function GET() {
       orderBy: { createdAt: "desc" }, take: 60,
     });
     return NextResponse.json({ messages: messages.reverse().map(publicMessage) }, { headers: { "Cache-Control": "no-store" } });
-  } catch {
+  } catch (error) {
+    logChatFailure("read", error);
     return NextResponse.json({ error: "Chat is temporarily unavailable." }, { status: 503 });
   }
 }
@@ -34,11 +36,12 @@ export async function POST(request: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: "Sign in with Aegyo Accounts to chat." }, { status: 401 });
   }
+  if (!canWriteChatInEnvironment(session.user.email)) return NextResponse.json({ error: "Posting is limited to preview testers." }, { status: 403 });
   try {
     const participation = await prisma.chatParticipation.findUnique({ where: { userId: session.userId } });
     if (!hasCurrentChatParticipation(participation)) return NextResponse.json({ error: "Accept the fan chat rules and confirm you are at least 16 before posting.", code: "chat_agreement_required" }, { status: 403 });
-  } catch { return NextResponse.json({ error: "Could not check chat access." }, { status: 503 }); }
-  if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: "Chat posting is temporarily unavailable." }, { status: 503 });
+  } catch (error) { logChatFailure("participation_check", error); return NextResponse.json({ error: "Could not check chat access." }, { status: 503 }); }
+  if (!process.env.OPENAI_API_KEY) { logChatFailure("posting_unconfigured", new Error("moderation_missing_key")); return NextResponse.json({ error: "Chat posting is temporarily unavailable." }, { status: 503 }); }
   const parsed = await readChatJson(request, 2048);
   if (parsed.tooLarge) {
     return NextResponse.json({ error: "Message is too long." }, { status: 413 });
@@ -77,7 +80,8 @@ export async function POST(request: NextRequest) {
     const authorName = chatDisplayName(session.user.displayName, session.userId);
     let status: "visible" | "held";
     try { status = await classifyChatBody(checked.body); }
-    catch {
+    catch (error) {
+      logChatFailure("moderation", error);
       await prisma.chatPostAttempt.update({ where: { id: reservation.id }, data: { outcome: "failed" } }).catch(() => undefined);
       return NextResponse.json({ error: "Safety check is unavailable. Please try again later." }, { status: 503 });
     }
@@ -91,7 +95,8 @@ export async function POST(request: NextRequest) {
       return created;
     });
     return NextResponse.json({ status, message: status === "visible" ? publicMessage(message) : null }, { status: 201 });
-  } catch {
+  } catch (error) {
+    logChatFailure("post", error);
     return NextResponse.json({ error: "Chat is temporarily unavailable." }, { status: 503 });
   }
 }

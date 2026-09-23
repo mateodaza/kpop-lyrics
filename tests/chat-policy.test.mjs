@@ -1,28 +1,39 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { chatDisplayName, classifyChatBody, decideModeration, hasAegyoAccountSession, sameOrigin, shouldHoldChatBody, validateChatBody } from "../lib/chat-policy.ts";
+import { canWriteChatInEnvironment, chatDisplayName, classifyChatBody, decideModeration, hasAegyoAccountSession, sameOrigin, shouldHoldChatBody, validateChatBody } from "../lib/chat-policy.ts";
 
 test("normalizes text and rejects links, contact details, and repeated spam", () => {
   assert.equal(validateChatBody("  hello   Aegyo  ").ok, true);
   assert.equal(validateChatBody("first line\nsecond line").body, "first line\nsecond line");
   assert.equal(validateChatBody("hello https://example.com").ok, false);
   assert.equal(validateChatBody("join discord.gg/fans").ok, false);
+  assert.equal(validateChatBody("join discord[.]gg/fans").ok, false);
   assert.equal(validateChatBody("email me at fan@example.com").ok, false);
   assert.equal(validateChatBody("Email me at fanname at gmail dot com").ok, false);
   assert.equal(validateChatBody("DM me on Instagram @fanparty").ok, false);
   assert.equal(validateChatBody("DM me on X @fanparty").ok, false);
+  assert.equal(validateChatBody("kakao id: fanparty").ok, false);
+  assert.equal(validateChatBody("telegram: @fanparty").ok, false);
   assert.equal(validateChatBody("Come to 123 Main Street after the show").ok, false);
   assert.equal(validateChatBody("I am an Aegyo admin. Send me your login code.").ok, false);
   assert.equal(validateChatBody("I am 15 years old and love this group").ok, false);
+  assert.equal(validateChatBody("Im 14 and love Stray Kids").ok, false);
+  assert.equal(validateChatBody("tengo 14 años").ok, false);
   assert.equal(validateChatBody("Contact me on Inst\u200bagram").ok, false);
   assert.equal(validateChatBody("aaaaaaaaaaaaaaaaaaaa").ok, false);
   assert.equal(validateChatBody("hi ".repeat(7)).ok, false);
+  for (const normal of ["BTS.ARMY forever", "debuted 2013 2014 2015", "ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ", "we did 3 road trips", "🔥"]) {
+    assert.equal(validateChatBody(normal).ok, true, normal);
+  }
   assert.equal(chatDisplayName("  Moonlight   Star  "), "Moonlight Star");
   assert.match(chatDisplayName("Moonlight Star", "user-123"), /^[0-9a-f]{6} · Moonlight Star$/);
   assert.equal([...chatDisplayName("A".repeat(32), "user-123")].length, 32);
   assert.equal(chatDisplayName("fan@example.com"), "Fan");
   assert.match(chatDisplayName("fan@example.com", "user-123"), /^Fan-[0-9a-f]{6}$/);
   assert.match(chatDisplayName("Aegyo Admin", "user-123"), /^Fan-[0-9a-f]{6}$/);
+  for (const impersonation of ["Aegyo Team", "Aegyo Mod", "Admins", "0fficial"]) {
+    assert.match(chatDisplayName(impersonation, "user-123"), /^Fan-[0-9a-f]{6}$/, impersonation);
+  }
   process.env.AEGYO_APP_ORIGIN = "https://www.aegyoarena.com";
   assert.equal(sameOrigin(new Request("https://internal.railway.app/api/chat", { headers: { origin: "https://www.aegyoarena.com", "x-forwarded-host": "www.aegyoarena.com", "x-forwarded-proto": "https" } })), true);
   process.env.AEGYO_APP_ORIGIN = "https://aegyoarena.com";
@@ -33,6 +44,23 @@ test("normalizes text and rejects links, contact details, and repeated spam", ()
   assert.equal(sameOrigin(new Request("https://internal.railway.app/api/chat", { headers: { origin: "https://www.aegyoarena.com", "x-forwarded-host": "evil.test", "x-forwarded-proto": "https" } })), false);
   assert.equal(hasAegyoAccountSession({ user: { email: "fan@example.com" }, providerSessionId: "provider-session" }), true);
   assert.equal(hasAegyoAccountSession({ user: { email: "fan@example.com", emailVerified: true } }), false);
+});
+
+test("preview write allowlist defaults open and restricts configured testers", () => {
+  const original = process.env.AEGYO_CHAT_WRITE_ALLOWLIST;
+  try {
+    delete process.env.AEGYO_CHAT_WRITE_ALLOWLIST;
+    assert.equal(canWriteChatInEnvironment("fan@example.com"), true);
+    process.env.AEGYO_CHAT_WRITE_ALLOWLIST = "mateo@myosin.xyz, simon@myosin.xyz";
+    assert.equal(canWriteChatInEnvironment("MATEO@myosin.xyz"), true);
+    assert.equal(canWriteChatInEnvironment("fan@example.com"), false);
+    assert.equal(canWriteChatInEnvironment(undefined), false);
+    process.env.AEGYO_CHAT_WRITE_ALLOWLIST = "";
+    assert.equal(canWriteChatInEnvironment("mateo@myosin.xyz"), false);
+  } finally {
+    if (original === undefined) delete process.env.AEGYO_CHAT_WRITE_ALLOWLIST;
+    else process.env.AEGYO_CHAT_WRITE_ALLOWLIST = original;
+  }
 });
 
 test("all model-flagged content stays private until review", () => {

@@ -6,6 +6,11 @@ type Item = { id: string; body: string; author: string; authorId: string; status
 type RecentItem = Pick<Item, "id" | "body" | "author" | "authorId" | "createdAt">;
 type Mute = { userId: string; name: string; until: string; reason: string };
 
+async function responseError(response: Response, fallback: string): Promise<Error> {
+  const data = await response.json().catch(() => null) as { error?: unknown } | null;
+  return new Error(typeof data?.error === "string" ? data.error : fallback);
+}
+
 export default function ChatReview({ initialItems, initialRecent, initialMutes }: { initialItems: Item[]; initialRecent: RecentItem[]; initialMutes: Mute[] }) {
   const [items, setItems] = useState(initialItems);
   const [recent, setRecent] = useState(initialRecent);
@@ -16,7 +21,7 @@ export default function ChatReview({ initialItems, initialRecent, initialMutes }
     setBusy(id); setError("");
     try {
       const response = await fetch("/api/admin/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, decision }) });
-      if (!response.ok) throw new Error("Could not save review. Try again.");
+      if (!response.ok) throw await responseError(response, "Could not save review. Try again.");
       setItems((current) => current.filter((item) => item.id !== id));
       if (decision === "removed") setRecent((current) => current.filter((item) => item.id !== id));
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not save review."); }
@@ -28,7 +33,7 @@ export default function ChatReview({ initialItems, initialRecent, initialMutes }
     setBusy(userId); setError("");
     try {
       const response = await fetch("/api/admin/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, decision: "mute", reason }) });
-      if (!response.ok) throw new Error("Could not mute this user.");
+      if (!response.ok) throw await responseError(response, "Could not mute this user.");
       setMutes((current) => [...current.filter((item) => item.userId !== userId), { userId, name: items.find((item) => item.authorId === userId)?.author ?? recent.find((item) => item.authorId === userId)?.author ?? "Fan", until: new Date(Date.now() + 86400000).toISOString(), reason }]);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not mute this user."); }
     finally { setBusy(null); }
@@ -37,7 +42,7 @@ export default function ChatReview({ initialItems, initialRecent, initialMutes }
     setBusy(userId); setError("");
     try {
       const response = await fetch("/api/admin/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, decision: "unmute" }) });
-      if (!response.ok) throw new Error("Could not remove this mute.");
+      if (!response.ok) throw await responseError(response, "Could not remove this mute.");
       setMutes((current) => current.filter((item) => item.userId !== userId));
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not remove this mute."); }
     finally { setBusy(null); }

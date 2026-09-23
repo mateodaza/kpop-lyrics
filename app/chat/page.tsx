@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { hasAegyoAccountSession } from "@/lib/chat-policy";
+import { canWriteChatInEnvironment, hasAegyoAccountSession } from "@/lib/chat-policy";
 import FanChatbox from "@/components/FanChatbox";
 import { T } from "@/components/LangProvider";
 
@@ -15,6 +15,6 @@ export default async function ChatPage() {
       <div><h1><T en="The fan room" es="La sala de fans" /></h1><p><T en="Comebacks, dance breaks, new favorites. Pull up a seat and talk K-pop with the fandom." es="Comebacks, bailes y nuevos favoritos. Entra y habla de K-pop con el fandom." /></p></div>
       <span className="chat-page-channel">#all-fans</span>
     </div>
-    <FanChatbox canPost={hasAegyoAccountSession(session)} signedIn={!!session} fullPage />
+    <FanChatbox canPost={hasAegyoAccountSession(session) && canWriteChatInEnvironment(session?.user.email)} signedIn={!!session} previewRestricted={!!session && !canWriteChatInEnvironment(session?.user.email)} fullPage />
   </main>;
 }

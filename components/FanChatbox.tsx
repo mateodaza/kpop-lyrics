@@ -16,7 +16,7 @@ const reportReasons = [
   ["other", "Other", "Otro"],
 ] as const;
 
-export default function FanChatbox({ canPost, signedIn, fullPage = false }: { canPost: boolean; signedIn: boolean; fullPage?: boolean }) {
+export default function FanChatbox({ canPost, signedIn, previewRestricted = false, fullPage = false }: { canPost: boolean; signedIn: boolean; previewRestricted?: boolean; fullPage?: boolean }) {
   const t = useT();
   const { lang } = useLang();
   const pathname = usePathname();
@@ -97,6 +97,8 @@ export default function FanChatbox({ canPost, signedIn, fullPage = false }: { ca
   const unread = seenAt ? messages.filter((message) => message.createdAt > seenAt).length : 0;
   const latest = messages[messages.length - 1];
   const length = [...body].length;
+  const trimmedBody = body.trim();
+  const hasMessage = [...trimmedBody].length >= 2 || /^\p{Extended_Pictographic}$/u.test(trimmedBody);
 
   async function acceptParticipation(event: FormEvent) {
     event.preventDefault();
@@ -114,7 +116,7 @@ export default function FanChatbox({ canPost, signedIn, fullPage = false }: { ca
 
   async function send(event: FormEvent) {
     event.preventDefault();
-    if (!body.trim() || sending || length > 500 || participation !== "accepted") return;
+    if (!hasMessage || sending || length > 500 || participation !== "accepted") return;
     setSending(true); setNotice(""); setError("");
     try {
       const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ body }) });
@@ -141,7 +143,7 @@ export default function FanChatbox({ canPost, signedIn, fullPage = false }: { ca
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not send report."); }
   }
 
-  return <aside className={`${styles.shell} ${open ? styles.open : styles.closed} ${fullPage ? styles.fullPage : ""} ${fullPage && participation === "required" && canPost ? styles.awaitingAgreement : ""}`} aria-label={t("Aegyo fan chat", "Chat de fans de Aegyo")}>
+  return <aside data-chat-dock={fullPage ? undefined : "true"} className={`${styles.shell} ${open ? styles.open : styles.closed} ${fullPage ? styles.fullPage : ""} ${fullPage && participation === "required" && canPost ? styles.awaitingAgreement : ""}`} aria-label={t("Aegyo fan chat", "Chat de fans de Aegyo")}>
     {fullPage ? <div className={styles.fullHeader}><span className={styles.fullHeaderTitle}><svg className={styles.brandMark} viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 2v20M2 12h20M5 5l14 14M19 5 5 19" /></svg><strong><span className={styles.liveDot} />{t("Aegyo fan room", "Sala de fans de Aegyo")}</strong></span><Link href="/">{t("Back to Aegyo", "Volver a Aegyo")}</Link></div> : <button type="button" className={styles.toggle} aria-expanded={open} aria-controls="aegyo-chat-room" onClick={() => setOpen((value) => !value)}>
       <svg className={styles.brandMark} viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 2v20M2 12h20M5 5l14 14M19 5 5 19" /></svg>
       <span className={styles.toggleText}><strong>{t("Fan room", "Sala de fans")}</strong><span>{!open && latest ? `${latest.authorName}: ${latest.body}` : t("Aegyo Arena chat", "Chat de Aegyo Arena")}</span></span>
@@ -172,10 +174,10 @@ export default function FanChatbox({ canPost, signedIn, fullPage = false }: { ca
         </form>}
         {canPost && participation === "accepted" && <form className={styles.composerForm} onSubmit={send}>
           <label className={styles.srOnly} htmlFor={fullPage ? "aegyo-chat-message-full" : "aegyo-chat-message"}>{t("Your message", "Tu mensaje")}</label>
-          <div className={styles.composerRow}><textarea ref={composerRef} id={fullPage ? "aegyo-chat-message-full" : "aegyo-chat-message"} rows={1} value={body} onChange={(event) => setBody([...event.target.value].slice(0, 500).join(""))} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder={t("Drop your take…", "Comparte lo que piensas…")} aria-describedby={fullPage ? "chat-limit-full" : "chat-limit-dock"} /><button type="submit" disabled={sending || [...body.trim()].length < 2 || length > 500}>{sending ? t("Sending…", "Enviando…") : t("Send", "Enviar")}</button></div>
+          <div className={styles.composerRow}><textarea ref={composerRef} id={fullPage ? "aegyo-chat-message-full" : "aegyo-chat-message"} rows={1} value={body} onChange={(event) => setBody([...event.target.value].slice(0, 500).join(""))} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder={t("Drop your take…", "Comparte lo que piensas…")} aria-describedby={fullPage ? "chat-limit-full" : "chat-limit-dock"} /><button type="submit" disabled={sending || !hasMessage || length > 500}>{sending ? t("Sending…", "Enviando…") : t("Send", "Enviar")}</button></div>
           <div className={styles.composerMeta}><span>{t("Enter to send · Shift+Enter for a new line", "Enter para enviar · Shift+Enter para otra línea")}</span><span id={fullPage ? "chat-limit-full" : "chat-limit-dock"} className={length >= 500 ? styles.limitReached : ""} role={length >= 500 ? "status" : undefined}>{length >= 500 ? t("Limit reached · 500/500", "Límite alcanzado · 500/500") : `${length}/500`}</span></div>
         </form>}
-        {!canPost && <p>{signedIn ? t("Use your shared Aegyo account to post here.", "Usa tu cuenta Aegyo compartida para publicar aquí.") : t("Sign in with your Aegyo account to join the chat.", "Inicia sesión con tu cuenta Aegyo para participar.")} <Link href="/login">{t("Sign in", "Iniciar sesión")}</Link></p>}
+        {!canPost && <p>{previewRestricted ? t("This preview is read-only for your account. Posting opens at launch.", "Esta vista previa es de solo lectura para tu cuenta. Podrás publicar al lanzar el chat.") : <>{signedIn ? t("Use your shared Aegyo account to post here.", "Usa tu cuenta Aegyo compartida para publicar aquí.") : t("Sign in with your Aegyo account to join the chat.", "Inicia sesión con tu cuenta Aegyo para participar.")} <Link href="/login">{t("Sign in", "Iniciar sesión")}</Link></>}</p>}
         <small>{t("Public chat · no links or personal details", "Chat público · sin enlaces ni datos personales")} · <Link href="/chat/rules">{t("Rules", "Reglas")}</Link></small>
         {!fullPage && <Link className={styles.fullRoomLink} href="/chat">{t("Open the full fan room", "Abrir la sala completa")} <span aria-hidden="true">↗</span></Link>}
       </div>

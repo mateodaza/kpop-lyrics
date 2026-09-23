@@ -110,7 +110,7 @@ h1, h2, h3 { font-family: var(--serif); }
 .chat-review-actions button:first-child { background: var(--sakura); color: var(--on-accent); border-color: var(--sakura); }
 .chat-review-actions button:disabled { opacity: .5; cursor: not-allowed; }
 .chat-review-actions button:focus-visible { outline: 2px solid var(--volt); outline-offset: 2px; }
-@media (max-width: 600px) { body { padding-bottom: max(84px, 12dvh); } }
+@media (max-width: 600px) { body:has([data-chat-dock]) { padding-bottom: max(84px, 12dvh); } }
 .genius-nav a:hover { color: var(--ink); }
 
 /* Accent CTA button — now a sakura pill (kept class name .btn-yellow) */
