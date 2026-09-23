@@ -12,6 +12,7 @@ test("normalizes text and rejects links, contact details, and repeated spam", ()
   assert.equal(validateChatBody("hi ".repeat(7)).ok, false);
   assert.equal(chatDisplayName("  Moonlight   Star  "), "Moonlight Star");
   assert.equal(chatDisplayName("fan@example.com"), "Fan");
+  assert.match(chatDisplayName("fan@example.com", "user-123"), /^Fan-[0-9a-f]{6}$/);
   process.env.AEGYO_APP_ORIGIN = "https://www.aegyoarena.com";
   assert.equal(sameOrigin(new Request("https://internal.railway.app/api/chat", { headers: { origin: "https://www.aegyoarena.com", "x-forwarded-host": "www.aegyoarena.com", "x-forwarded-proto": "https" } })), true);
   process.env.AEGYO_APP_ORIGIN = "https://aegyoarena.com";

@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     if (reservation.kind !== "reserved") {
       return NextResponse.json({ error: reservation.kind === "muted" ? "Your chat access is temporarily paused." : reservation.kind === "duplicate" ? "You already sent that message today." : "Chat is busy. Please try again later." }, { status: reservation.kind === "muted" ? 403 : 429 });
     }
-    const authorName = chatDisplayName(session.user.displayName);
+    const authorName = chatDisplayName(session.user.displayName, session.userId);
     let status: "visible" | "held";
     try { status = await classifyChatBody(checked.body); }
     catch {

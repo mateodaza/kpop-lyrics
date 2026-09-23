@@ -9,9 +9,10 @@ export function hasAegyoAccountSession(session: unknown): boolean {
     typeof value.user?.email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.user.email);
 }
 
-export function chatDisplayName(input: string | null | undefined): string {
+export function chatDisplayName(input: string | null | undefined, userId?: string): string {
   const name = (input ?? "").normalize("NFKC").replace(/\s+/g, " ").trim();
-  return /^[\p{L}\p{N} _.-]{2,32}$/u.test(name) ? name : "Fan";
+  if (/^[\p{L}\p{N} _.-]{2,32}$/u.test(name)) return name;
+  return userId ? `Fan-${crypto.createHash("sha256").update(userId).digest("hex").slice(0, 6)}` : "Fan";
 }
 
 export function validateChatBody(input: unknown): ChatValidation {
