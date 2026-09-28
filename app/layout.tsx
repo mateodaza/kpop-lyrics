@@ -7,8 +7,10 @@ import SocialLinks from "@/components/SocialLinks";
 import OutboundTracker from "@/components/OutboundTracker";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import NavSearch from "@/components/NavSearch";
+import FanChatbox from "@/components/FanChatbox";
 import { LangProvider, T } from "@/components/LangProvider";
 import { getSession } from "@/lib/auth";
+import { canWriteChatInEnvironment, hasAegyoAccountSession } from "@/lib/chat-policy";
 import Script from "next/script";
 import Image from "next/image";
 import { Cormorant_Garamond, DM_Sans, Space_Mono } from "next/font/google";
@@ -126,6 +128,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <span><T en="Made with ♡ by the fandom" es="Hecho con ♡ por el fandom" /></span>
           </div>
         </footer>
+        {process.env.AEGYO_CHAT_ENABLED === "true" && <FanChatbox canPost={hasAegyoAccountSession(session) && canWriteChatInEnvironment(session?.user.email)} signedIn={isLoggedIn} previewRestricted={isLoggedIn && !canWriteChatInEnvironment(session?.user.email)} />}
 
         {/* Google Analytics (gtag.js) — site traffic + paid-ads/referral source tracking */}
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-700MXJM1FW" strategy="afterInteractive" />

@@ -36,16 +36,16 @@ export default function LeSserafimTerms() {
       <H2 en="The prizes" es="Los premios" />
       <p>
         <T
-          en="One (1) grand-prize winner receives two (2) Section D floor seats to LE SSERAFIM's PUREFLOW tour at the Prudential Center in Newark, NJ on Thursday, October 8, 2026, plus access to a private merch line (approximate retail value $935). One (1) runner-up receives $200 in official LE SSERAFIM merchandise. Prizes are non-transferable and may not be resold. No cash alternative except at the sponsor's discretion."
-          es="Un (1) ganador del premio mayor recibe dos (2) asientos de pista en la Sección D para la gira PUREFLOW de LE SSERAFIM en el Prudential Center de Newark, NJ el jueves 8 de octubre de 2026, más acceso a una fila de merch privada (valor aproximado de $935). Un (1) ganador del segundo lugar recibe $200 en mercancía oficial de LE SSERAFIM. Los premios son intransferibles y no pueden revenderse. No hay alternativa en efectivo, salvo a discreción del patrocinador."
+          en="One (1) grand-prize winner receives two (2) lower-bowl seats in Section D to LE SSERAFIM's PUREFLOW tour at the Prudential Center in Newark, NJ on Thursday, October 8, 2026, plus access to a private merch line (approximate retail value $935). One (1) runner-up receives $200 in official LE SSERAFIM merchandise. Prizes are non-transferable and may not be resold. No cash alternative except at the sponsor's discretion."
+          es="Un (1) ganador del premio mayor recibe dos (2) asientos en la Sección D del nivel bajo para la gira PUREFLOW de LE SSERAFIM en el Prudential Center de Newark, NJ el jueves 8 de octubre de 2026, más acceso a una fila de merch privada (valor aproximado de $935). Un (1) ganador del segundo lugar recibe $200 en mercancía oficial de LE SSERAFIM. Los premios son intransferibles y no pueden revenderse. No hay alternativa en efectivo, salvo a discreción del patrocinador."
         />
       </p>
 
       <H2 en="Key dates" es="Fechas clave" />
       <p>
         <T
-          en="Entries close the night before the draw (Wednesday, September 23, 2026 at 11:59 PM ET). Winners are drawn at random on Thursday, September 24, 2026, and winner outreach begins Friday, September 25, 2026. Concert: Thursday, October 8, 2026 at 7:30 PM."
-          es="Las inscripciones cierran la noche anterior al sorteo (miércoles 23 de septiembre de 2026 a las 11:59 PM ET). Los ganadores se eligen al azar el jueves 24 de septiembre de 2026, y el contacto con los ganadores comienza el viernes 25 de septiembre de 2026. Concierto: jueves 8 de octubre de 2026 a las 7:30 PM."
+          en="Entries close Thursday, October 1, 2026 at 11:59 PM ET. Winners are drawn at random on Friday, October 2, 2026, and winner outreach begins the same day. Concert: Thursday, October 8, 2026 at 7:30 PM."
+          es="Las inscripciones cierran el jueves 1 de octubre de 2026 a las 11:59 PM ET. Los ganadores se eligen al azar el viernes 2 de octubre de 2026, y el contacto con los ganadores comienza ese mismo día. Concierto: jueves 8 de octubre de 2026 a las 7:30 PM."
         />
       </p>
 

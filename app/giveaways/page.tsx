@@ -30,8 +30,8 @@ const CARDS: Card[] = [
     img: "/giveaway/le-sserafim.jpg",
     accent: "var(--sakura)",
     blurb: {
-      en: "Win two floor seats + a private merch line, or $200 in official merch for the runner-up.",
-      es: "Gana dos asientos de pista + una fila de merch privada, o $200 en merch oficial para el segundo lugar.",
+      en: "Win two lower-bowl seats in Section D + a private merch line, or $200 in official merch for the runner-up.",
+      es: "Gana dos asientos en el nivel bajo, Sección D, + una fila de merch privada, o $200 en merch oficial para el segundo lugar.",
     },
     when: { en: "Concert: Thu, Oct 8, 2026", es: "Concierto: jue 8 de octubre de 2026" },
     where: { en: "Prudential Center - Newark, NJ", es: "Prudential Center - Newark, NJ" },

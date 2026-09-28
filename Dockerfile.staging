@@ -5,7 +5,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-cert
     && rm -rf /var/lib/apt/lists/*
 ENV NEXT_TELEMETRY_DISABLED=1 \
     DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build \
-    AEGYO_SHARED_AUTH_ENABLED=false
+    AEGYO_SHARED_AUTH_ENABLED=false \
+    AEGYO_CHAT_PREVIEW_MODE=true
 COPY package.json staging/package-lock.json ./
 RUN npm ci --ignore-scripts --no-audit --no-fund
 COPY prisma/schema.prisma prisma/schema.prisma
@@ -23,6 +24,7 @@ FROM node:24.21.0-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
+    AEGYO_CHAT_PREVIEW_MODE=true \
     PORT=3000
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
@@ -32,6 +34,7 @@ COPY --from=build --chown=aegyo:aegyo /app/package.json ./package.json
 COPY --from=build --chown=aegyo:aegyo /app/node_modules ./node_modules
 COPY --from=build --chown=aegyo:aegyo /app/.next ./.next
 COPY --from=build --chown=aegyo:aegyo /app/public ./public
+COPY --chown=aegyo:aegyo next.config.preview-runtime.mjs ./next.config.mjs
 COPY --from=build --chown=aegyo:aegyo /app/prisma/schema.prisma ./prisma/schema.prisma
 USER aegyo
 EXPOSE 3000

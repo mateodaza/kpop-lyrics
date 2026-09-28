@@ -11,8 +11,9 @@ export const dynamic = "force-dynamic";
 const MAX_REFERRALS = 50;
 const SITE = "https://www.aegyoarena.com";
 const linkFor = (code: string) => `${SITE}/le-sserafim-giveaway?ref=${code}`;
-// Entries close the night before the Sept 24, 2026 draw: Wed Sept 23, 2026 11:59:59pm ET.
-const GIVEAWAY_CUTOFF_MS = Date.parse("2026-09-24T03:59:59.999Z");
+// Entries close Thu Oct 1, 2026 at 11:59:59pm ET (= Oct 2 03:59:59 UTC, EDT is UTC-4);
+// the draw follows on Fri Oct 2. Extended one week from the original Sept 23 close.
+const GIVEAWAY_CUTOFF_MS = Date.parse("2026-10-02T03:59:59.999Z");
 
 let tableReady = false;
 async function ensureTable() {
